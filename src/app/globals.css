@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-orange-500: #F5620F;
+  --color-orange-600: #d9540c;
+  --color-orange-50: #fff7ed;
+  --font-sans: var(--font-merriweather), serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: #0f1419;
+  font-family: var(--font-sans);
+}
+
+/*
+ * RTL: mirror directional icons so arrows/chevrons point the correct way in Arabic.
+ * Uses the `scale` property (independent of `translate`) so hover-nudge utilities still compose.
+ * Keep directional lucide icons STATIC in JSX (no per-component lng conditionals) — this rule
+ * handles the LTR/RTL flip globally for current and future components.
+ */
+[dir="rtl"] .lucide-chevron-right,
+[dir="rtl"] .lucide-chevron-left,
+[dir="rtl"] .lucide-chevrons-right,
+[dir="rtl"] .lucide-chevrons-left,
+[dir="rtl"] .lucide-arrow-right,
+[dir="rtl"] .lucide-arrow-left,
+[dir="rtl"] .lucide-arrow-up-right,
+[dir="rtl"] .lucide-arrow-up-left,
+[dir="rtl"] .lucide-arrow-down-right,
+[dir="rtl"] .lucide-arrow-down-left,
+[dir="rtl"] .lucide-corner-up-right,
+[dir="rtl"] .lucide-corner-up-left,
+[dir="rtl"] .lucide-corner-down-right,
+[dir="rtl"] .lucide-corner-down-left,
+[dir="rtl"] .lucide-move-right,
+[dir="rtl"] .lucide-move-left {
+  scale: -1 1;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
