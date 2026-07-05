@@ -1,5 +1,6 @@
 import { format, addDays, subDays, isToday, parse, isValid } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
+import { teamPath, playerPath, leaguePath, matchPath } from '@/lib/seo';
 
 const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 
@@ -64,10 +65,51 @@ export function cn(...classes: (string | undefined | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-export function leagueHref(id: number, name?: string, logo?: string): string {
-  const params = new URLSearchParams();
-  if (name) params.set('name', name);
-  if (logo) params.set('logo', logo);
-  const qs = params.toString();
-  return `/league/${id}${qs ? `?${qs}` : ''}`;
+// Canonical slugged entity URLs. The logo argument is kept for call-site
+// compatibility (it used to be passed as a query param for instant headers,
+// which server rendering made unnecessary).
+export function leagueHref(id: number, name?: string, _logo?: string): string {
+  void _logo;
+  return leaguePath(id, name);
+}
+
+export function teamHref(id: number, name?: string): string {
+  return teamPath(id, name);
+}
+
+export function playerHref(id: number, name?: string): string {
+  return playerPath(id, name);
+}
+
+export function matchHref(id: number, homeName?: string, awayName?: string): string {
+  return matchPath(id, homeName, awayName);
+}
+
+/**
+ * Pass a league's display name (already localized on the page the user clicked)
+ * to the league page, so its header shows the name in the selected language
+ * immediately instead of the English name from the server-rendered data.
+ * sessionStorage is used because the slug-canonicalization redirect would strip
+ * a query param; the entry is tagged with the language it was rendered in so a
+ * stale entry never leaks into the other language.
+ */
+export function rememberLeagueName(id: number, name: string | undefined, lng: string): void {
+  if (typeof window === 'undefined' || !name) return;
+  try {
+    sessionStorage.setItem(`league-name:${id}`, JSON.stringify({ name, lng }));
+  } catch {
+    // Storage unavailable (e.g. blocked) — the page falls back to fetched data.
+  }
+}
+
+export function recallLeagueName(id: number, lng: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(`league-name:${id}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { name?: string; lng?: string };
+    return parsed.lng === lng && parsed.name ? parsed.name : null;
+  } catch {
+    return null;
+  }
 }

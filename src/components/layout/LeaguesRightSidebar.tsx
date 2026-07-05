@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useRehydrated } from '@/store/hooks';
 import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
 import { Trophy, ChevronRight, Shield, Megaphone } from 'lucide-react';
-import { leagueHref } from '@/lib/utils';
+import { leagueHref, teamHref, rememberLeagueName } from '@/lib/utils';
 
 interface SidebarTeam {
   id: number;
@@ -34,23 +34,31 @@ interface TopLeaguesResponse {
 
 export function LeaguesRightSidebar() {
   const { code: lng } = useAppSelector((state) => state.language.language);
+  // Wait for the persisted language before fetching, and drop responses from
+  // an outdated language — otherwise a first-mount 'en' request can resolve
+  // after (and overwrite) the correct-language one.
+  const rehydrated = useRehydrated();
   const { t } = useTranslation(lng);
   const [teams, setTeams] = useState<SidebarTeam[]>([]);
   const [leagues, setLeagues] = useState<SidebarLeague[]>([]);
 
   useEffect(() => {
+    if (!rehydrated) return;
+    let stale = false;
     const fetchData = async () => {
       try {
         const [teamsData, leaguesData] = await Promise.all([
           api.teams.getTopTeams(lng) as Promise<SidebarTeam[]>,
           api.leagues.getTopLeagues(lng) as Promise<TopLeaguesResponse>,
         ]);
+        if (stale) return;
         if (Array.isArray(teamsData)) setTeams(teamsData.slice(0, 8));
         if (leaguesData?.leagues) setLeagues(leaguesData.leagues.slice(0, 5));
       } catch { /* keep empty */ }
     };
     fetchData();
-  }, [lng]);
+    return () => { stale = true; };
+  }, [lng, rehydrated]);
 
   return (
     <div className="sticky top-0 h-screen overflow-y-auto py-5 ps-6 pe-4 scrollbar-hide">
@@ -71,7 +79,7 @@ export function LeaguesRightSidebar() {
             {teams.map((team) => (
               <Link
                 key={team.id}
-                href={`/team/${team.id}`}
+                href={teamHref(team.id, team.name)}
                 className="group flex items-center gap-3.5 rounded-xl px-3 py-2.5 transition-all hover:bg-white hover:shadow-sm"
               >
                 <div className="relative h-8 w-8 shrink-0 rounded-lg bg-white p-1 shadow-sm ring-1 ring-gray-100">
@@ -108,6 +116,7 @@ export function LeaguesRightSidebar() {
                 <Link
                   key={league.id}
                   href={leagueHref(league.id, league.name, league.logo)}
+                  onClick={() => rememberLeagueName(league.id, league.name, lng)}
                   className="group flex items-center gap-3.5 rounded-xl px-3 py-2.5 transition-all hover:bg-white hover:shadow-sm"
                 >
                   <div className="relative h-8 w-8 shrink-0 rounded-lg bg-white p-1 shadow-sm ring-1 ring-gray-100">

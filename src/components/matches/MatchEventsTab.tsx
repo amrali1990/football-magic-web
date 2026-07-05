@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, playerHref } from '@/lib/utils';
 
 interface MatchEventsTabProps {
   matchId: number;
@@ -58,7 +58,7 @@ function EventContent({ event, lng, t, align }: { event: MatchEvent; lng: string
   return (
     <div className={`min-w-0 ${textAlign}`}>
       {event.player?.id ? (
-        <Link href={`/player/${event.player.id}`} className="text-[13px] font-medium text-gray-900 hover:underline">
+        <Link href={playerHref(event.player.id, event.player.name)} className="text-[13px] font-medium text-gray-900 hover:underline">
           {event.player.name}
         </Link>
       ) : (
@@ -67,14 +67,14 @@ function EventContent({ event, lng, t, align }: { event: MatchEvent; lng: string
       {isSub && event.assist?.name && (
         <p className="text-[11px] text-green-600">
           ↑ {event.assist.id ? (
-            <Link href={`/player/${event.assist.id}`} className="hover:underline">{event.assist.name}</Link>
+            <Link href={playerHref(event.assist.id, event.assist.name)} className="hover:underline">{event.assist.name}</Link>
           ) : event.assist.name}
         </p>
       )}
       {isGoal && event.assist?.name && (
         <p className="text-[11px] text-gray-500">
           {t('Assisted_By')}: {event.assist.id ? (
-            <Link href={`/player/${event.assist.id}`} className="hover:underline">{event.assist.name}</Link>
+            <Link href={playerHref(event.assist.id, event.assist.name)} className="hover:underline">{event.assist.name}</Link>
           ) : event.assist.name}
         </p>
       )}

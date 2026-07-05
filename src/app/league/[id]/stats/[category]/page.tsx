@@ -7,11 +7,11 @@ import Image from 'next/image';
 import { useAppSelector } from '@/store/hooks';
 import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, playerHref } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Loader2 } from 'lucide-react';
+import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 
 interface PlayerStat {
   playerId: number;
@@ -121,7 +121,7 @@ export default function LeagueStatsPage() {
               <div key={`${stat.playerId}-${index}`}>
                 {index > 0 && <div className="mx-4 border-t border-gray-50" />}
                 <Link
-                  href={`/player/${stat.playerId}`}
+                  href={playerHref(stat.playerId, stat.playerName)}
                   className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50"
                 >
                   <span className="w-6 text-center text-[12px] font-semibold text-gray-400">
@@ -153,20 +153,7 @@ export default function LeagueStatsPage() {
         </div>
 
         {hasMore && (
-          <button
-            onClick={loadMore}
-            disabled={loadingMore}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-50"
-          >
-            {loadingMore ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('Loading')}
-              </>
-            ) : (
-              t('Load_More')
-            )}
-          </button>
+          <InfiniteScrollTrigger onLoadMore={loadMore} loading={loadingMore} />
         )}
       </div>
     </div>

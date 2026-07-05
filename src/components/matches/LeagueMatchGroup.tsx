@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
-import { leagueHref } from '@/lib/utils';
+import { leagueHref, rememberLeagueName } from '@/lib/utils';
 import { LeagueWithFixtures } from '@/types';
 import { MatchCard } from './MatchCard';
 
@@ -19,6 +19,7 @@ export function LeagueMatchGroup({ leagueWithFixtures, lng }: LeagueMatchGroupPr
     <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
       <Link
         href={leagueHref(id, name, logo)}
+        onClick={() => rememberLeagueName(id, name, lng)}
         className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 rounded-t-xl"
       >
         <div className="relative h-9 w-9 shrink-0">

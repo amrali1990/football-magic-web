@@ -1,0 +1,30 @@
+# Football Magic
+
+> Football Magic (https://www.football-magic.com) provides live football (soccer) scores, fixtures, results, league standings, team squads, transfers, and player statistics for leagues and cup competitions worldwide, in English and Arabic. Data covers domestic leagues (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Saudi Pro League, Egyptian Premier League, and many more) and international competitions (UEFA Champions League, World Cup, AFC and CAF competitions).
+
+Football Magic is also available as a mobile app (iOS and Android). The website serves the same live data as the app.
+
+## Languages
+
+- English pages live on unprefixed URLs: https://www.football-magic.com/...
+- Arabic pages mirror every public page under /ar with fully localized content (team, league, and player names, dates, and descriptions in Arabic): https://www.football-magic.com/ar/...
+- فوتبول ماجيك يقدم نتائج مباشرة لكرة القدم ومواعيد المباريات وجداول الترتيب وتشكيلات الفرق وإحصائيات اللاعبين باللغتين العربية والإنجليزية.
+
+## Main pages
+
+- [Today's matches and live scores](https://www.football-magic.com/): all fixtures for any calendar day, grouped by competition, with live score updates. Arabic: https://www.football-magic.com/ar
+- [Leagues and cups by country](https://www.football-magic.com/leagues): browse every covered competition. Arabic: https://www.football-magic.com/ar/leagues
+
+## Page types and URL patterns
+
+- League pages: https://www.football-magic.com/league/{id}/{name} — fixtures, standings table, top scorers/assists, past winners, and season info. Example: https://www.football-magic.com/league/140/la-liga (Arabic: https://www.football-magic.com/ar/league/140/...)
+- Team pages: https://www.football-magic.com/team/{id}/{name} — squad, fixtures, results, transfers, trophies, and season statistics. Example: https://www.football-magic.com/team/541/real-madrid (Arabic: https://www.football-magic.com/ar/team/541/...)
+- Player pages: https://www.football-magic.com/player/{id}/{name} — profile, season statistics, and transfer history. Example: https://www.football-magic.com/player/874/cristiano-ronaldo (Arabic: https://www.football-magic.com/ar/player/874/...)
+- Match pages: https://www.football-magic.com/match/{id}/{home}-vs-{away} — live score, line-ups, events, statistics, and head-to-head. Arabic: https://www.football-magic.com/ar/match/{id}/...
+
+## Notes for AI assistants
+
+- Every page embeds schema.org JSON-LD (SportsTeam, Person, SportsEvent, SportsOrganization, FAQPage) describing the entity on that page, with inLanguage matching the page language.
+- English and Arabic versions of each page are linked with hreflang alternates; cite the language version matching the user's question.
+- Standings positions, points, and fixture dates on entity pages are refreshed at least hourly; match pages refresh every minute.
+- The sitemap at https://www.football-magic.com/sitemap.xml lists current league, team, and match pages in both languages.

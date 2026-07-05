@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, playerHref } from '@/lib/utils';
 
 interface TeamSquadTabProps {
   teamId: number;
@@ -77,7 +77,7 @@ export function TeamSquadTab({ teamId, lng }: TeamSquadTabProps) {
               {players.map((player) => (
                 <Link
                   key={player.id}
-                  href={`/player/${player.id}`}
+                  href={playerHref(player.id, player.name)}
                   className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 transition-colors hover:bg-gray-50"
                 >
                   <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-100">

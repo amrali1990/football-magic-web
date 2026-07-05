@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { useTranslation } from '@/i18n';
-import { localizeNumber, leagueHref } from '@/lib/utils';
+import { localizeNumber, leagueHref, rememberLeagueName } from '@/lib/utils';
 import { TeamSeasonStatsModal, TeamStatistics } from './TeamSeasonStatsModal';
 
 interface Season {
@@ -95,6 +95,7 @@ export function TeamLeagueSeasonList({ teamId, lng, source }: TeamLeagueSeasonLi
         <div key={item.league.id} className="rounded-xl border border-gray-100 bg-white shadow-sm">
           <Link
             href={leagueHref(item.league.id, item.league.name, item.league.logo)}
+            onClick={() => rememberLeagueName(item.league.id, item.league.name, lng)}
             className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 rounded-t-xl"
           >
             <div className="relative h-7 w-7 shrink-0">

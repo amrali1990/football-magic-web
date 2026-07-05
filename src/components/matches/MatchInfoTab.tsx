@@ -6,8 +6,8 @@ import { useTranslation } from '@/i18n';
 import { MapPin, User, Calendar, Clock, Trophy, Flag } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
-import { localizeNumber, leagueHref } from '@/lib/utils';
-import type { MatchStatistics } from '@/app/match/[id]/page';
+import { localizeNumber, leagueHref, rememberLeagueName } from '@/lib/utils';
+import type { MatchStatistics } from '@/lib/normalize';
 
 interface MatchInfoTabProps {
   fixture: Fixture;
@@ -66,8 +66,20 @@ export function MatchInfoTab({ fixture, statistics, lng }: MatchInfoTabProps) {
   const { t } = useTranslation(lng);
   const locale = lng === 'ar' ? ar : enUS;
 
-  const infoItems = [
-    { icon: Trophy, label: t('Leagues'), value: fixture.league?.name, href: fixture.league?.id ? leagueHref(fixture.league.id, fixture.league.name, fixture.league.logo) : undefined },
+  const infoItems: Array<{
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    value?: string | null;
+    href?: string;
+    onClick?: () => void;
+  }> = [
+    {
+      icon: Trophy,
+      label: t('Leagues'),
+      value: fixture.league?.name,
+      href: fixture.league?.id ? leagueHref(fixture.league.id, fixture.league.name, fixture.league.logo) : undefined,
+      onClick: fixture.league?.id ? () => rememberLeagueName(fixture.league.id, fixture.league.name, lng) : undefined,
+    },
     { icon: Flag, label: t('Round'), value: fixture.round ? localizeNumber(fixture.round, lng) : undefined },
     { icon: Calendar, label: t('Season'), value: fixture.date ? localizeNumber(format(new Date(fixture.date), 'EEEE, d MMMM yyyy', { locale }), lng) : '' },
     { icon: Clock, label: t('Minutes'), value: fixture.date ? localizeNumber(format(new Date(fixture.date), 'HH:mm', { locale }), lng) : '' },
@@ -112,14 +124,16 @@ export function MatchInfoTab({ fixture, statistics, lng }: MatchInfoTabProps) {
             const content = (
               <div className="flex items-center gap-3 px-4 py-2.5">
                 <item.icon className="h-4 w-4 shrink-0 text-gray-400" />
-                <span className="text-[13px] text-gray-900">{item.value}</span>
+                {/* Dates/times format in the visitor's timezone, which can differ from the
+                    server-rendered HTML — patch instead of warning on hydration. */}
+                <span suppressHydrationWarning className="text-[13px] text-gray-900">{item.value}</span>
               </div>
             );
             return (
               <div key={index}>
                 {index > 0 && <div className="mx-4 border-t border-gray-50" />}
                 {item.href ? (
-                  <Link href={item.href} className="block transition-colors hover:bg-gray-50">{content}</Link>
+                  <Link href={item.href} onClick={item.onClick} className="block transition-colors hover:bg-gray-50">{content}</Link>
                 ) : (
                   content
                 )}

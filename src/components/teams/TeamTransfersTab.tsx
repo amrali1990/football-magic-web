@@ -8,7 +8,8 @@ import { api } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, teamHref, playerHref } from '@/lib/utils';
+import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import { ArrowRight, User } from 'lucide-react';
 
 interface TeamTransfersTabProps {
@@ -28,7 +29,7 @@ export function TransferTeam({ team }: { team: TransferTeamInfo }) {
     );
   }
   return (
-    <Link href={`/team/${team.id}`} className="flex min-w-0 flex-col items-center gap-1 transition-colors hover:text-orange-500">
+    <Link href={teamHref(team.id, team.name)} className="flex min-w-0 flex-col items-center gap-1 transition-colors hover:text-orange-500">
       <div className="relative h-8 w-8 shrink-0">
         {team.logo ? (
           <Image src={team.logo} alt={team.name} fill className="object-contain" unoptimized />
@@ -97,7 +98,7 @@ export function TeamTransfersTab({ teamId, lng }: TeamTransfersTabProps) {
 
             {/* Player name */}
             <Link
-              href={`/player/${transfer.player.id}`}
+              href={playerHref(transfer.player.id, transfer.player.name)}
               className="mt-2 line-clamp-1 text-center text-sm font-semibold text-gray-900 hover:text-orange-500"
             >
               {transfer.player.name}
@@ -114,15 +115,7 @@ export function TeamTransfersTab({ teamId, lng }: TeamTransfersTabProps) {
       </div>
 
       {hasMore && (
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={loading}
-            className="rounded-lg bg-gray-100 px-6 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50"
-          >
-            {loading ? '...' : t('Show_All')}
-          </button>
-        </div>
+        <InfiniteScrollTrigger onLoadMore={() => setPage((p) => p + 1)} loading={loading} />
       )}
     </div>
   );

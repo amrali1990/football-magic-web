@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, leagueHref, rememberLeagueName } from '@/lib/utils';
 
 export interface PlayerSeasonStat {
   league: { id: number; name: string; logo: string; season?: number };
@@ -115,7 +115,7 @@ export function PlayerSeasonStatsModal({ stat, lng, onClose }: PlayerSeasonStats
               <Image src={stat.league.logo} alt={stat.league.name} fill className="object-contain" unoptimized />
             )}
           </div>
-          <Link href={`/league/${stat.league.id}`} className="min-w-0 flex-1 truncate text-[15px] font-bold text-gray-900 hover:text-orange-500">
+          <Link href={leagueHref(stat.league.id, stat.league.name)} onClick={() => rememberLeagueName(stat.league.id, stat.league.name, lng)} className="min-w-0 flex-1 truncate text-[15px] font-bold text-gray-900 hover:text-orange-500">
             {stat.league.name}
           </Link>
           <button

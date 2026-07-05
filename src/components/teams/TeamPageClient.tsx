@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useAppSelector } from '@/store/hooks';
 import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
-import { Team, Country, Venue } from '@/types';
+import { normalizeTeamInfo, RawTeamInfo, TeamData } from '@/lib/normalize';
 import { Tabs } from '@/components/ui/Tabs';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -17,71 +16,50 @@ import { TeamTransfersTab } from '@/components/teams/TeamTransfersTab';
 import { TeamSquadTab } from '@/components/teams/TeamSquadTab';
 import { TeamTrophiesTab } from '@/components/teams/TeamTrophiesTab';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { SeoIntro } from '@/components/seo/SeoSections';
+import { useRouteLanguageSync } from '@/lib/useRouteLanguageSync';
 
-interface TeamData {
-  team: Team;
-  coverage?: { transfers: boolean; squad: boolean; trophies: boolean };
+interface TeamPageClientProps {
+  teamId: number;
+  initialData: TeamData;
+  /** Locale the server fetched initialData in ('en' route or '/ar' route). */
+  initialLng?: string;
+  /** Server-generated intro paragraph (SEO copy rendered into the static HTML). */
+  intro?: string;
+  introLabel?: string;
 }
 
-// Raw shape returned by /teams/getTeamInformations: `venue` is a sibling of `team`,
-// `country` is a plain string (the name) with `countryCode` provided separately, and
-// tab availability comes back as top-level booleans (transfers/squad/winner).
-interface RawTeamInfo {
-  team: Team & { country?: string | Country; countryCode?: string };
-  venue?: Venue;
-  transfers?: boolean;
-  squad?: boolean;
-  winner?: boolean;
-}
-
-function normalizeTeam(raw: RawTeamInfo): TeamData {
-  const rawCountry = raw.team.country;
-  const country: Country | undefined =
-    typeof rawCountry === 'string'
-      ? { name: rawCountry, code: raw.team.countryCode ?? '', flag: '' }
-      : rawCountry;
-
-  const team: Team = {
-    ...raw.team,
-    country,
-    venue: raw.venue ?? raw.team.venue,
-  };
-
-  return {
-    team,
-    coverage: {
-      transfers: !!raw.transfers,
-      squad: !!raw.squad,
-      trophies: !!raw.winner,
-    },
-  };
-}
-
-export default function TeamPage() {
-  const params = useParams();
-  const teamId = Number(params.id);
+export function TeamPageClient({ teamId, initialData, initialLng = 'en', intro, introLabel }: TeamPageClientProps) {
   const { code: lng } = useAppSelector((state) => state.language.language);
   const { t } = useTranslation(lng);
+  useRouteLanguageSync(initialLng);
 
-  const [teamData, setTeamData] = useState<TeamData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [teamData, setTeamData] = useState<TeamData | null>(initialData);
+  const [loading, setLoading] = useState(false);
+  // The server fetched the initial data in the route's locale; only refetch
+  // when the user's language differs (e.g. restored from persisted state).
+  const fetchedLng = useRef(initialLng);
 
   useEffect(() => {
+    if (lng === fetchedLng.current) return;
+    fetchedLng.current = lng;
+    let stale = false;
     const fetchTeam = async () => {
+      setLoading(true);
       try {
         const data = await api.teams.getInfo(teamId, lng) as RawTeamInfo;
-        setTeamData(normalizeTeam(data));
+        if (!stale) setTeamData(normalizeTeamInfo(data));
       } catch {
-        setTeamData(null);
+        // Keep showing the previously loaded data on refetch failure.
       } finally {
-        setLoading(false);
+        if (!stale) setLoading(false);
       }
     };
     fetchTeam();
+    return () => { stale = true; };
   }, [teamId, lng]);
 
-  if (loading) return <LoadingSpinner />;
-  if (!teamData) return null;
+  if (!teamData) return loading ? <LoadingSpinner /> : null;
 
   const { team, coverage } = teamData;
 
@@ -124,8 +102,10 @@ export default function TeamPage() {
         </div>
       </PageHeader>
 
+      {intro && <SeoIntro label={introLabel ?? `About ${team.name}`} text={intro} />}
+
       <div className="p-3">
-        <Tabs tabs={tabs} />
+        {loading ? <LoadingSpinner /> : <Tabs tabs={tabs} />}
       </div>
     </div>
   );

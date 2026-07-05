@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface Tab {
@@ -17,23 +17,34 @@ interface TabsProps {
 }
 
 export function Tabs({ tabs, defaultTab, paramKey = 'tab' }: TabsProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+  // The active tab lives in local state (server renders the default tab into
+  // the static HTML); the URL is read on mount and mirrored with
+  // history.replaceState. Reading it via useSearchParams() would force a
+  // client-side-rendering bailout that blanks the whole page for crawlers.
+  const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.key);
 
-  // Derive the active tab from the URL so back/forward navigation restores it.
-  const fromUrl = searchParams.get(paramKey);
-  const activeTab =
-    fromUrl && tabs.some((tab) => tab.key === fromUrl)
-      ? fromUrl
-      : defaultTab || tabs[0]?.key;
+  useEffect(() => {
+    const applyFromUrl = () => {
+      const fromUrl = new URLSearchParams(window.location.search).get(paramKey);
+      setActiveTab((current) =>
+        fromUrl && fromUrl !== current && tabs.some((tab) => tab.key === fromUrl) ? fromUrl : current
+      );
+    };
+    applyFromUrl();
+    // Restore the tab on browser back/forward (the address bar may carry a
+    // different ?tab= from a prior history entry).
+    window.addEventListener('popstate', applyFromUrl);
+    return () => window.removeEventListener('popstate', applyFromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramKey]);
 
   const selectTab = (key: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(paramKey, key);
+    setActiveTab(key);
     // replace (not push) so switching tabs doesn't spam browser history,
     // while still keeping the chosen tab in the current history entry's URL.
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    const params = new URLSearchParams(window.location.search);
+    params.set(paramKey, key);
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}?${params.toString()}`);
   };
 
   return (

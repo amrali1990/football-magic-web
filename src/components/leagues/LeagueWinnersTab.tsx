@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, teamHref } from '@/lib/utils';
 
 interface LeagueWinnersTabProps {
   leagueId: number;
@@ -32,7 +32,7 @@ function WinnerRow({ team, label, variant }: { team: NonNullable<TeamInfo>; labe
   const isWinner = variant === 'winner';
   return (
     <Link
-      href={`/team/${team.id}`}
+      href={teamHref(team.id, team.name)}
       className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 ${isWinner ? 'bg-amber-50/40' : ''}`}
     >
       <div className="relative h-9 w-9 shrink-0">

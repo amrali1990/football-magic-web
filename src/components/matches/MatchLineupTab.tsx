@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, playerHref } from '@/lib/utils';
 import { LineupPlayerStatsModal, LineupPlayer } from './LineupPlayerStatsModal';
 
 interface MatchLineupTabProps {
@@ -35,7 +35,7 @@ function PlayerClickable({
     );
   }
   return (
-    <Link href={`/player/${player.player.id}`} className={className}>
+    <Link href={playerHref(player.player.id, player.player.name)} className={className}>
       {children}
     </Link>
   );

@@ -6,6 +6,7 @@ import { useAppSelector } from '@/store/hooks';
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Calendar, Trophy, Star, Menu } from 'lucide-react';
+import { SHOW_USER_FEATURES } from '@/lib/featureFlags';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -15,8 +16,13 @@ export function BottomNav() {
   const tabs = [
     { href: '/', icon: Calendar, label: t('Matches') },
     { href: '/leagues', icon: Trophy, label: t('Leagues') },
-    { href: '/favorites', icon: Star, label: t('Favorits_Teams').split(' ')[0] || 'Favorites' },
-    { href: '/settings', icon: Menu, label: t('Settings') },
+    // Account-related tabs are temporarily hidden via SHOW_USER_FEATURES.
+    ...(SHOW_USER_FEATURES
+      ? [
+          { href: '/favorites', icon: Star, label: t('Favorits_Teams').split(' ')[0] || 'Favorites' },
+          { href: '/settings', icon: Menu, label: t('Settings') },
+        ]
+      : []),
   ];
 
   return (

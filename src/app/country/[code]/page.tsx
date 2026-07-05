@@ -7,9 +7,11 @@ import Link from 'next/link';
 import { useAppSelector } from '@/store/hooks';
 import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
+import { teamHref, playerHref } from '@/lib/utils';
 import { Country, League, Team, Player } from '@/types';
 import { Tabs } from '@/components/ui/Tabs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import { NoData } from '@/components/ui/NoData';
 import { LeagueCard } from '@/components/leagues/LeagueCard';
 import { SearchBar } from '@/components/ui/SearchBar';
@@ -91,7 +93,7 @@ function CountryTeamsTab({ countryCode, national, lng }: { countryCode: string; 
       <SearchBar value={search} onChange={setSearch} placeholder={t('Search_Teams')} />
       <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 bg-white">
         {filtered.map((team) => (
-          <Link key={team.id} href={`/team/${team.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+          <Link key={team.id} href={teamHref(team.id, team.name)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
             <div className="relative h-8 w-8 shrink-0">
               <Image src={team.logo} alt={team.name} fill className="object-contain" unoptimized />
             </div>
@@ -100,11 +102,7 @@ function CountryTeamsTab({ countryCode, national, lng }: { countryCode: string; 
         ))}
       </div>
       {hasMore && !search && (
-        <div className="flex justify-center">
-          <button onClick={() => setPage((p) => p + 1)} disabled={loading} className="rounded-lg bg-gray-100 px-6 py-2 text-sm text-gray-600 hover:bg-gray-200 disabled:opacity-50">
-            {loading ? '...' : t('Show_All')}
-          </button>
-        </div>
+        <InfiniteScrollTrigger onLoadMore={() => setPage((p) => p + 1)} loading={loading} />
       )}
     </div>
   );
@@ -140,7 +138,7 @@ function CountryPlayersTab({ countryCode, lng }: { countryCode: string; lng: str
     <div className="space-y-3">
       <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 bg-white">
         {players.map((player) => (
-          <Link key={player.id} href={`/player/${player.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+          <Link key={player.id} href={playerHref(player.id, player.name)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
             <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gray-100">
               <Image src={player.photo} alt={player.name} fill className="object-cover" unoptimized />
             </div>
@@ -152,11 +150,7 @@ function CountryPlayersTab({ countryCode, lng }: { countryCode: string; lng: str
         ))}
       </div>
       {hasMore && (
-        <div className="flex justify-center">
-          <button onClick={() => setPage((p) => p + 1)} disabled={loading} className="rounded-lg bg-gray-100 px-6 py-2 text-sm text-gray-600 hover:bg-gray-200 disabled:opacity-50">
-            {loading ? '...' : t('Show_All')}
-          </button>
-        </div>
+        <InfiniteScrollTrigger onLoadMore={() => setPage((p) => p + 1)} loading={loading} />
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import { setLanguage } from '@/store/slices/languageSlice';
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Calendar, Trophy, Star, Settings, User, Globe } from 'lucide-react';
+import { SHOW_USER_FEATURES } from '@/lib/featureFlags';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -27,8 +28,14 @@ export function Sidebar() {
   const navItems = [
     { href: '/', icon: Calendar, label: t('Matches') },
     { href: '/leagues', icon: Trophy, label: t('Leagues') },
-    { href: '/favorites', icon: Star, label: t('Favorits_Teams').split(' ')[0] || 'Favorites' },
-    { href: '/settings', icon: Settings, label: t('Settings') },
+    // Account-related entries are temporarily hidden; flip SHOW_USER_FEATURES
+    // to bring back Favorites, Settings, and the Login/Profile link.
+    ...(SHOW_USER_FEATURES
+      ? [
+          { href: '/favorites', icon: Star, label: t('Favorits_Teams').split(' ')[0] || 'Favorites' },
+          { href: '/settings', icon: Settings, label: t('Settings') },
+        ]
+      : []),
   ];
 
   return (
@@ -66,22 +73,24 @@ export function Sidebar() {
         </button>
       </div>
 
-      <Link
-        href="/profile"
-        className="flex items-center gap-3 rounded-full px-4 py-3 transition-colors hover:bg-gray-100"
-      >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
-          <User className="h-5 w-5 text-gray-600" />
-        </div>
-        <div className="hidden xl:block min-w-0">
-          <p className="text-sm font-bold text-gray-900 truncate">
-            {user ? user.username : t('Login')}
-          </p>
-          {user && (
-            <p className="text-xs text-gray-500 truncate">{user.email}</p>
-          )}
-        </div>
-      </Link>
+      {SHOW_USER_FEATURES && (
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 rounded-full px-4 py-3 transition-colors hover:bg-gray-100"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
+            <User className="h-5 w-5 text-gray-600" />
+          </div>
+          <div className="hidden xl:block min-w-0">
+            <p className="text-sm font-bold text-gray-900 truncate">
+              {user ? user.username : t('Login')}
+            </p>
+            {user && (
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            )}
+          </div>
+        </Link>
+      )}
     </nav>
   );
 }

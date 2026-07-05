@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Timer, TimerOff, Hourglass, Flag, Goal, AlarmClockPlus } from 'lucide-react';
 import { FixtureTeam } from '@/types';
-import { formatMatchTime, getMatchStatusColor, localizeNumber } from '@/lib/utils';
+import { formatMatchTime, getMatchStatusColor, localizeNumber, matchHref } from '@/lib/utils';
 
 // Status groups mirror the mobile app's MatchCard (screens/Matches/MatchCard.js)
 const IN_PLAY = ['1H', '2H', 'LIVE'];
@@ -78,7 +78,7 @@ export function MatchCard({ fixture, lng }: MatchCardProps) {
 
   return (
     <Link
-      href={`/match/${fixture.id}`}
+      href={matchHref(fixture.id, fixture.teams.home.name, fixture.teams.away.name)}
       className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50/80"
     >
       <div className="flex flex-1 items-center justify-end gap-2.5 text-right">
@@ -115,7 +115,12 @@ export function MatchCard({ fixture, lng }: MatchCardProps) {
             ) : null}
           </>
         ) : (
-          <span className="rounded-md bg-gray-50 px-2.5 py-1 text-[13px] font-semibold text-gray-600">
+          <span
+            // Kickoff time renders in the visitor's timezone, which can differ
+            // from the server-rendered HTML — patch instead of warning.
+            suppressHydrationWarning
+            className="rounded-md bg-gray-50 px-2.5 py-1 text-[13px] font-semibold text-gray-600"
+          >
             {formatMatchTime(fixture.date, lng)}
           </span>
         )}

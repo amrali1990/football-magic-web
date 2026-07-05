@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { api } from '@/lib/api';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, teamHref } from '@/lib/utils';
 import { NoData } from '@/components/ui/NoData';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { PlayerSeasonStatsModal, PlayerSeasonStat } from './PlayerSeasonStatsModal';
@@ -130,7 +130,7 @@ export function PlayerStatsTab({ playerId, total, teams, years, lng }: PlayerSta
         localTeams.map((team) => (
           <div key={team.id} className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
             <Link
-              href={`/team/${team.id}`}
+              href={teamHref(team.id, team.name)}
               className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
             >
               <div className="relative h-7 w-7 shrink-0">

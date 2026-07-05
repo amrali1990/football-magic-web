@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NoData } from '@/components/ui/NoData';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, playerHref } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
 
 interface LeaguePlayersStatsTabProps {
@@ -108,7 +108,7 @@ export function LeaguePlayersStatsTab({ leagueId, season, lng }: LeaguePlayersSt
                   <div key={stat.playerId ?? index}>
                     {index > 0 && <div className="mx-4 border-t border-gray-50" />}
                     <Link
-                      href={`/player/${stat.playerId}`}
+                      href={playerHref(stat.playerId, stat.playerName)}
                       className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50"
                     >
                       <span className="w-5 text-center text-[12px] font-semibold text-gray-400">

@@ -3,18 +3,21 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Trophy, Shield } from 'lucide-react';
-import { leagueHref } from '@/lib/utils';
+import { leagueHref, rememberLeagueName } from '@/lib/utils';
+import { useAppSelector } from '@/store/hooks';
 
 interface LeagueCardProps {
   league: { id: number; name: string; logo?: string; type?: string };
 }
 
 export function LeagueCard({ league }: LeagueCardProps) {
+  const { code: lng } = useAppSelector((state) => state.language.language);
   const isCup = league.type?.toLowerCase() === 'cup';
 
   return (
     <Link
       href={leagueHref(league.id, league.name, league.logo)}
+      onClick={() => rememberLeagueName(league.id, league.name, lng)}
       className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50/80"
     >
       <div className="relative h-7 w-7 shrink-0">

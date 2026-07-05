@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useRehydrated } from '@/store/hooks';
 import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
 import { Trophy, ChevronRight } from 'lucide-react';
-import { leagueHref } from '@/lib/utils';
+import { leagueHref, rememberLeagueName } from '@/lib/utils';
 
 interface SidebarLeague {
   id: number;
@@ -26,19 +26,25 @@ interface TopLeaguesResponse {
 
 export function RightSidebar() {
   const { code: lng } = useAppSelector((state) => state.language.language);
+  // Wait for the persisted language before fetching, and drop responses from
+  // an outdated language — otherwise a first-mount 'en' request can resolve
+  // after (and overwrite) the correct-language one.
+  const rehydrated = useRehydrated();
   const { t } = useTranslation(lng);
   const [leagues, setLeagues] = useState<SidebarLeague[]>([]);
 
   useEffect(() => {
+    if (!rehydrated) return;
+    let stale = false;
     const fetchLeagues = async () => {
       try {
         const data = await api.leagues.getTopLeagues(lng) as TopLeaguesResponse;
-        const list = data?.leagues || [];
-        setLeagues(list);
+        if (!stale) setLeagues(data?.leagues || []);
       } catch { /* keep empty */ }
     };
     fetchLeagues();
-  }, [lng]);
+    return () => { stale = true; };
+  }, [lng, rehydrated]);
 
   return (
     <div className="sticky top-0 h-screen py-5 ps-6 pe-4">
@@ -57,6 +63,7 @@ export function RightSidebar() {
             <Link
               key={league.id}
               href={leagueHref(league.id, league.name, league.logo)}
+              onClick={() => rememberLeagueName(league.id, league.name, lng)}
               className="group flex items-center gap-3.5 rounded-xl px-3 py-3 transition-all hover:bg-white hover:shadow-sm"
             >
               <div className="relative h-9 w-9 shrink-0 rounded-lg bg-white p-1 shadow-sm ring-1 ring-gray-100">

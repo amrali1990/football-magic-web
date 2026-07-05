@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { X, ExternalLink, Shirt, User } from 'lucide-react';
 import { useTranslation } from '@/i18n';
-import { localizeNumber } from '@/lib/utils';
+import { localizeNumber, playerHref } from '@/lib/utils';
 
 export interface LineupPlayerStats {
   games?: { minutes: number | null; rating: string | number | null; captain?: boolean } | null;
@@ -105,7 +105,7 @@ export function LineupPlayerStatsModal({ player, lng, onClose }: LineupPlayerSta
           </div>
           <div className="min-w-0 flex-1">
             <Link
-              href={`/player/${player.player.id}`}
+              href={playerHref(player.player.id, player.player.name)}
               className="flex items-center gap-1.5 text-[15px] font-bold text-gray-900 hover:text-orange-500"
             >
               <span className="truncate">{player.player.name}</span>
