@@ -6,7 +6,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { getLeague, getLeagueStandings } from '@/lib/server-api';
 import { leaguePath, teamPath, metaDescription, languageAlternates, requestedEntityPath, pathsMatch, ordinal, SITE_NAME, Locale } from '@/lib/seo';
 import { seoText } from '@/lib/seo-i18n';
-import { sportsOrganizationSchema } from '@/lib/schema';
+import { sportsOrganizationSchema, breadcrumbSchema } from '@/lib/schema';
 import type { FaqItem } from '@/lib/schema';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { FaqSection, SeoLinksSection, SeoLink } from '@/components/seo/SeoSections';
@@ -52,13 +52,13 @@ export async function generateLeagueMetadata(params: LeagueRouteParams, locale: 
       siteName: SITE_NAME,
       type: 'website',
       locale: locale === 'ar' ? 'ar_AR' : 'en_US',
-      images: league.logo ? [{ url: league.logo, alt: `${league.name} logo` }] : undefined,
+      images: [{ url: `/og/league/${league.id}`, width: 1200, height: 630, alt: `${league.name} – ${SITE_NAME}` }],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: `${title} | ${SITE_NAME}`,
       description,
-      images: league.logo ? [league.logo] : undefined,
+      images: [`/og/league/${league.id}`],
     },
   };
 }
@@ -116,9 +116,15 @@ export async function LeagueEntityPage({ params, locale }: { params: LeagueRoute
         : row.team.name,
     }));
 
+  const breadcrumb = breadcrumbSchema(locale, [
+    { name: locale === 'ar' ? 'البطولات' : 'Leagues', path: locale === 'ar' ? '/ar/leagues' : '/leagues' },
+    { name: league.name, path: canonical },
+  ]);
+
   return (
     <>
       <JsonLd data={sportsOrganizationSchema(league, locale)} />
+      <JsonLd data={breadcrumb} />
       <LeaguePageClient
         leagueId={league.id}
         initialData={league}

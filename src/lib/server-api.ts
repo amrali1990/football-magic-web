@@ -115,6 +115,45 @@ export const getFixture = cache(async (fixtureId: number, lng = 'en'): Promise<M
   return normalizeFixtureResponse(raw);
 });
 
+// Shape returned by /fixtures/getFixtureEvents. `type` codes (mirrors the
+// client MatchEventsTab): 1 goal, 2 own goal, 3 penalty, 4 missed penalty,
+// 5 yellow card, 6 second yellow, 7 red card, 8 substitution, 9-13 VAR.
+export interface RawMatchEvent {
+  id: number;
+  teamId: number;
+  time: number;
+  type: number;
+  details: string | null;
+  player: { id: number; name: string; photo?: string } | null;
+  assist: { id: number | null; name: string | null } | null;
+}
+
+export const getFixtureEvents = cache(async (fixtureId: number, lng = 'en'): Promise<RawMatchEvent[]> => {
+  const raw = await serverFetch<RawMatchEvent[]>('/fixtures/getFixtureEvents', { body: { fixtureId }, lng, revalidate: 60 });
+  return Array.isArray(raw) ? raw : [];
+});
+
+export interface RawLineupPlayer {
+  player: { id: number; name: string; number?: number | null; pos?: string | null };
+}
+
+export interface RawTeamLineup {
+  team: { id: number; name: string; logo?: string };
+  formation?: string | null;
+  coach?: { id: number; name: string } | null;
+  players?: RawLineupPlayer[][];
+  substitutes?: RawLineupPlayer[];
+}
+
+export interface RawFixtureLineup {
+  homeTeam?: RawTeamLineup;
+  awayTeam?: RawTeamLineup;
+}
+
+export const getFixtureLineup = cache(async (fixtureId: number, lng = 'en'): Promise<RawFixtureLineup | null> => {
+  return serverFetch<RawFixtureLineup>('/fixtures/getFixtureLineup', { body: { fixtureId }, lng, revalidate: 60 });
+});
+
 export const getMatchesByDate = cache(
   async (date: string, page = 0, lng = 'en'): Promise<{ list: LeagueWithFixtures[]; totalPages: number }> => {
     const raw = await serverFetch<{ list?: LeagueWithFixtures[]; totalPages?: number }>('/leagues/getLeaguesByDate', {
@@ -152,6 +191,16 @@ export interface TopTeam {
 export const getTopTeams = cache(async (lng = 'en'): Promise<TopTeam[]> => {
   const raw = await serverFetch<TopTeam[]>('/teams/getTopTeams', { method: 'GET', lng, revalidate: 86400 });
   return Array.isArray(raw) ? raw : [];
+});
+
+export interface TopLeaguesSidebarResponse {
+  countryName?: string;
+  leagues?: Array<{ id: number; name: string; logo: string; country: string; flag: string }>;
+}
+
+export const getTopLeagues = cache(async (lng = 'en'): Promise<TopLeaguesSidebarResponse['leagues']> => {
+  const raw = await serverFetch<TopLeaguesSidebarResponse>('/leagues/getTopLeagues', { method: 'GET', lng, revalidate: 86400 });
+  return Array.isArray(raw?.leagues) ? raw.leagues : [];
 });
 
 export const getCountry = cache(async (code: string, lng = 'en'): Promise<{ name?: string; code?: string; flag?: string } | null> => {

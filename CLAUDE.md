@@ -36,6 +36,7 @@ npm run lint    # Run ESLint
 - Canonical URLs are slugged (`/team/541/real-madrid`); ID-only or wrong-slug URLs 308-redirect via `permanentRedirect()`. Always build entity links with `teamHref/playerHref/leagueHref/matchHref` from `src/lib/utils.ts` (backed by `src/lib/seo.ts`).
 - `src/lib/normalize.ts` holds API response normalizers shared by server and client. `app/sitemap.ts`, `app/robots.ts`, `public/llms.txt` handle discovery; JSON-LD builders live in `src/lib/schema.ts` rendered via `<JsonLd />`.
 - `StoreProvider` renders children as the PersistGate fallback — never set `loading={null}` there or all SSR HTML disappears.
+- The root layout server-fetches top teams/leagues and seeds the right sidebars via `LayoutProvider sidebarSeed` so those internal links exist in every page's HTML. Match pages server-render events + starting line-ups into collapsed sections and emit BreadcrumbList JSON-LD (all entity pages do). OG images are generated at `/og/match|team|league/[id]` and `/og/home` (ImageResponse, English names only — no Arabic glyphs in satori's default font).
 - Avoid `useSearchParams()` in components used on static routes (forces a CSR bailout that blanks the page); read `window.location.search` in an effect instead (see `Tabs.tsx`, `HomeClient.tsx`).
 
 ### Route → Mobile Screen Mapping

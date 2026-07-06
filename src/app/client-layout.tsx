@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { LeaguesRightSidebar } from '@/components/layout/LeaguesRightSidebar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { GlobalLoadingOverlay } from '@/components/ui/LoadingSpinner';
-import { LayoutProvider, useLayoutContext } from '@/lib/layout-context';
+import { LayoutProvider, useLayoutContext, SidebarSeedData } from '@/lib/layout-context';
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   const { direction } = useAppSelector((state) => state.language.language);
@@ -36,9 +36,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ClientLayout({ children }: { children: React.ReactNode }) {
+export function ClientLayout({ children, sidebarSeed = null }: { children: React.ReactNode; sidebarSeed?: SidebarSeedData | null }) {
   return (
-    <LayoutProvider>
+    <LayoutProvider sidebarSeed={sidebarSeed}>
       <MainLayout>{children}</MainLayout>
     </LayoutProvider>
   );

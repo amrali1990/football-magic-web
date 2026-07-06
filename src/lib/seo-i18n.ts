@@ -298,6 +298,46 @@ export const seoText = {
     return parts.join(' ');
   },
 
+  // ---------- Match events / lineups (server-rendered crawlable sections) ----------
+  eventTypeLabel(locale: Locale, type: number): string {
+    const en: Record<number, string> = {
+      1: 'Goal', 2: 'Own goal', 3: 'Penalty', 4: 'Missed penalty',
+      5: 'Yellow card', 6: 'Second yellow card', 7: 'Red card', 8: 'Substitution',
+    };
+    const ar: Record<number, string> = {
+      1: 'هدف', 2: 'هدف عكسي', 3: 'ركلة جزاء', 4: 'ركلة جزاء ضائعة',
+      5: 'بطاقة صفراء', 6: 'بطاقة صفراء ثانية', 7: 'بطاقة حمراء', 8: 'تبديل',
+    };
+    if (type >= 9 && type <= 13) return locale === 'ar' ? 'قرار حكم الفيديو (VAR)' : 'VAR decision';
+    return (locale === 'ar' ? ar : en)[type] ?? '';
+  },
+  minuteLabel(locale: Locale, minute: number): string {
+    return locale === 'ar' ? `الدقيقة ${n(minute, locale)}` : `${minute}'`;
+  },
+  scorerEntry(locale: Locale, name: string, minute: number, type: number): string {
+    const suffix = type === 3 ? (locale === 'ar' ? ' (ركلة جزاء)' : ' (pen.)') : type === 2 ? (locale === 'ar' ? ' (هدف عكسي)' : ' (o.g.)') : '';
+    return `${name} (${seoText.minuteLabel(locale, minute)})${suffix}`;
+  },
+  goalsFact(locale: Locale, teamName: string, scorers: string[]): string {
+    const list = scorers.join(locale === 'ar' ? '، ' : ', ');
+    return locale === 'ar' ? `أهداف ${teamName}: ${list}.` : `Goals for ${teamName}: ${list}.`;
+  },
+  assistLabel(locale: Locale): string {
+    return locale === 'ar' ? 'صناعة' : 'assist';
+  },
+  matchEventsTitle(locale: Locale): string {
+    return locale === 'ar' ? 'أحداث المباراة' : 'Match Events';
+  },
+  lineupsTitle(locale: Locale): string {
+    return locale === 'ar' ? 'التشكيلة الأساسية' : 'Starting Line-ups';
+  },
+  formationLabel(locale: Locale): string {
+    return locale === 'ar' ? 'الطريقة' : 'Formation';
+  },
+  coachLabel(locale: Locale): string {
+    return locale === 'ar' ? 'المدرب' : 'Coach';
+  },
+
   // ---------- Section labels ----------
   aboutLabel(locale: Locale, name: string): string {
     return locale === 'ar' ? `عن ${name}` : `About ${name}`;

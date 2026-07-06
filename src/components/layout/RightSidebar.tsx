@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAppSelector, useRehydrated } from '@/store/hooks';
@@ -8,14 +8,7 @@ import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
 import { Trophy, ChevronRight } from 'lucide-react';
 import { leagueHref, rememberLeagueName } from '@/lib/utils';
-
-interface SidebarLeague {
-  id: number;
-  name: string;
-  logo: string;
-  country: string;
-  flag: string;
-}
+import { useLayoutContext, SidebarLeague } from '@/lib/layout-context';
 
 interface TopLeaguesResponse {
   countryName: string;
@@ -31,10 +24,15 @@ export function RightSidebar() {
   // after (and overwrite) the correct-language one.
   const rehydrated = useRehydrated();
   const { t } = useTranslation(lng);
-  const [leagues, setLeagues] = useState<SidebarLeague[]>([]);
+  // Server-fetched (English) seed puts the list into the initial HTML;
+  // refetch only when the user's language differs.
+  const { sidebarSeed } = useLayoutContext();
+  const [leagues, setLeagues] = useState<SidebarLeague[]>(sidebarSeed?.leagues ?? []);
+  const fetchedLng = useRef(sidebarSeed ? 'en' : '');
 
   useEffect(() => {
-    if (!rehydrated) return;
+    if (!rehydrated || lng === fetchedLng.current) return;
+    fetchedLng.current = lng;
     let stale = false;
     const fetchLeagues = async () => {
       try {

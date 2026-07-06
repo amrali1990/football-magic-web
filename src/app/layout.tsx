@@ -6,6 +6,8 @@ import { ClientLayout } from "./client-layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationSchema, webSiteSchema } from "@/lib/schema";
 import { SITE_URL, SITE_NAME, metaDescription } from "@/lib/seo";
+import { getTopTeams, getTopLeagues } from "@/lib/server-api";
+import type { SidebarSeedData } from "@/lib/layout-context";
 
 const merriweather = Merriweather({
   variable: "--font-merriweather",
@@ -38,18 +40,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Top teams/leagues render in the right sidebar on every page; fetching them
+  // here puts those internal links into the crawlable HTML site-wide (English —
+  // the sidebar refetches client-side for Arabic users, as before).
+  const [topTeams, topLeagues] = await Promise.all([getTopTeams('en'), getTopLeagues('en')]);
+  const sidebarSeed = {
+    teams: (topTeams as SidebarSeedData['teams']).slice(0, 8),
+    leagues: (topLeagues as SidebarSeedData['leagues']).slice(0, 8),
+  };
+
   return (
     <html lang="en" className={`${merriweather.variable} h-full antialiased`}>
       <body className="min-h-full bg-white font-sans">
         <JsonLd data={organizationSchema()} />
         <JsonLd data={webSiteSchema()} />
         <StoreProvider>
-          <ClientLayout>{children}</ClientLayout>
+          <ClientLayout sidebarSeed={sidebarSeed}>{children}</ClientLayout>
         </StoreProvider>
       </body>
     </html>

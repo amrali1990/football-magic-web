@@ -28,7 +28,7 @@ export function SeoIntro({ label = 'About', text }: { label?: string; text?: str
   );
 }
 
-function CollapsibleCard({ title, children }: { title: string; children: React.ReactNode }) {
+export function CollapsibleCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <details className="mx-3 mb-3 rounded-xl border border-gray-100 bg-white shadow-sm">
       <summary className="cursor-pointer select-none px-4 py-3 text-[13px] font-semibold text-gray-500 transition-colors hover:text-gray-700">

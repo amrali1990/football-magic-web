@@ -93,7 +93,7 @@ export function MatchInfoTab({ fixture, statistics, lng }: MatchInfoTabProps) {
       {statistics && (
         <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[13px] font-semibold text-gray-700">{t('Statistics')}</span>
+            <h2 className="text-[13px] font-semibold text-gray-700">{t('Statistics')}</h2>
           </div>
           <div className="border-t border-gray-100">
             {STAT_ROWS.map((row) => {
@@ -117,7 +117,7 @@ export function MatchInfoTab({ fixture, statistics, lng }: MatchInfoTabProps) {
 
       <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-[13px] font-semibold text-gray-700">{t('MatchInfo')}</span>
+          <h2 className="text-[13px] font-semibold text-gray-700">{t('MatchInfo')}</h2>
         </div>
         <div className="border-t border-gray-100">
           {infoItems.map((item, index) => {

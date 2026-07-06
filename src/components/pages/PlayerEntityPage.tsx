@@ -6,7 +6,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { getPlayer } from '@/lib/server-api';
 import { playerPath, teamPath, metaDescription, languageAlternates, requestedEntityPath, pathsMatch, SITE_NAME, Locale } from '@/lib/seo';
 import { seoText } from '@/lib/seo-i18n';
-import { personSchema } from '@/lib/schema';
+import { personSchema, breadcrumbSchema } from '@/lib/schema';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { SeoLinksSection, SeoLink } from '@/components/seo/SeoSections';
 import { PlayerPageClient } from '@/components/players/PlayerPageClient';
@@ -111,9 +111,15 @@ export async function PlayerEntityPage({ params, locale }: { params: PlayerRoute
     .slice(0, 6)
     .map((t) => ({ href: teamPath(t.id, t.name, locale), label: t.name }));
 
+  const breadcrumb = breadcrumbSchema(locale, [
+    ...(team?.id && team.name ? [{ name: team.name, path: teamPath(team.id, team.name, locale) }] : []),
+    { name: player.name, path: canonical },
+  ]);
+
   return (
     <>
       <JsonLd data={personSchema(player, { teamName: team?.name, position, locale })} />
+      <JsonLd data={breadcrumb} />
       <PlayerPageClient
         playerId={player.id}
         initialData={data}

@@ -17,7 +17,7 @@ import {
 } from '@/lib/server-api';
 import { teamPath, playerPath, leaguePath, matchPath, metaDescription, languageAlternates, requestedEntityPath, pathsMatch, SITE_NAME, Locale } from '@/lib/seo';
 import { seoText } from '@/lib/seo-i18n';
-import { sportsTeamSchema } from '@/lib/schema';
+import { sportsTeamSchema, breadcrumbSchema } from '@/lib/schema';
 import type { FaqItem } from '@/lib/schema';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { FaqSection, SeoLinksSection, SeoLink } from '@/components/seo/SeoSections';
@@ -64,13 +64,13 @@ export async function generateTeamMetadata(params: TeamRouteParams, locale: Loca
       siteName: SITE_NAME,
       type: 'website',
       locale: locale === 'ar' ? 'ar_AR' : 'en_US',
-      images: team.logo ? [{ url: team.logo, alt: `${team.name} logo` }] : undefined,
+      images: [{ url: `/og/team/${team.id}`, width: 1200, height: 630, alt: `${team.name} – ${SITE_NAME}` }],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: `${title} | ${SITE_NAME}`,
       description,
-      images: team.logo ? [team.logo] : undefined,
+      images: [`/og/team/${team.id}`],
     },
   };
 }
@@ -163,9 +163,17 @@ export async function TeamEntityPage({ params, locale }: { params: TeamRoutePara
     label: seoText.matchName(locale, f.teams.home.name, f.teams.away.name),
   }));
 
+  const breadcrumb = breadcrumbSchema(locale, [
+    ...(currentLeague
+      ? [{ name: currentLeague.leagueName, path: leaguePath(currentLeague.leagueId, currentLeague.leagueName, locale) }]
+      : []),
+    { name: team.name, path: canonical },
+  ]);
+
   return (
     <>
       <JsonLd data={sportsTeamSchema(team, { leagueName: currentLeague?.leagueName, squad, locale })} />
+      <JsonLd data={breadcrumb} />
       <TeamPageClient
         teamId={teamId}
         initialData={data}

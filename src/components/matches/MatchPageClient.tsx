@@ -81,8 +81,15 @@ export function MatchPageClient({ matchId, initialData, initialLng = 'en', intro
     { key: 'h2h', label: t('Head2Head'), content: <MatchH2HTab matchId={matchId} lng={lng} /> },
   ];
 
+  const scoreline = !isNotStarted && fixture.goals.home != null && fixture.goals.away != null
+    ? `${fixture.teams.home.name} ${fixture.goals.home}–${fixture.goals.away} ${fixture.teams.away.name}`
+    : `${fixture.teams.home.name} ${lng === 'ar' ? 'ضد' : 'vs'} ${fixture.teams.away.name}`;
+
   return (
     <div className="flex flex-col">
+      {/* The visual header is a logo/score grid; this gives the page its
+          single H1 (the match itself) for the document outline. */}
+      <h1 className="sr-only">{scoreline}</h1>
       <PageHeader>
         <Link href={leagueHref(fixture.league.id, fixture.league.name)} onClick={() => rememberLeagueName(fixture.league.id, fixture.league.name, lng)} className="flex items-center gap-2 border-b border-gray-100 px-4 py-2.5 transition-colors hover:bg-gray-50">
           {fixture.league.logo && (

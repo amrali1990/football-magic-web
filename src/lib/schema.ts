@@ -5,7 +5,7 @@
 
 import type { Team, League, Fixture, Player, Venue } from '@/types';
 import type { SquadPlayer } from '@/lib/server-api';
-import { SITE_URL, SITE_NAME, absoluteUrl, teamPath, playerPath, leaguePath, matchPath, Locale, DEFAULT_LOCALE } from '@/lib/seo';
+import { SITE_URL, SITE_NAME, absoluteUrl, teamPath, playerPath, leaguePath, matchPath, formatSeoDate, Locale, DEFAULT_LOCALE } from '@/lib/seo';
 
 const SPORT = 'Soccer';
 
@@ -101,15 +101,32 @@ function eventStatus(statusShort?: string) {
   return 'https://schema.org/EventScheduled';
 }
 
+const FINISHED_EVENT_STATUSES = ['FT', 'AET', 'PEN'];
+
 export function sportsEventSchema(fixture: Fixture, locale: Locale = DEFAULT_LOCALE) {
   const home = fixture.teams?.home;
   const away = fixture.teams?.away;
   const joiner = locale === 'ar' ? 'ضد' : 'vs';
-  const name = home?.name && away?.name ? `${home.name} ${joiner} ${away.name}` : undefined;
+  // schema.org has no dedicated score property, so the convention is to carry
+  // the final score in the event name/description once the match finished.
+  const finished =
+    FINISHED_EVENT_STATUSES.includes(fixture.status?.short ?? '') &&
+    fixture.goals?.home != null &&
+    fixture.goals?.away != null;
+  const name =
+    home?.name && away?.name
+      ? finished
+        ? `${home.name} ${fixture.goals.home}–${fixture.goals.away} ${away.name}`
+        : `${home.name} ${joiner} ${away.name}`
+      : undefined;
+  const description = name
+    ? `${name} – ${fixture.league?.name ?? 'Football'}${fixture.date ? `, ${formatSeoDate(fixture.date, locale)}` : ''}`
+    : undefined;
   return {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
     name,
+    description,
     sport: SPORT,
     inLanguage: locale,
     url: absoluteUrl(matchPath(fixture.id, home?.name, away?.name, locale)),
@@ -141,6 +158,26 @@ export function sportsOrganizationSchema(league: League, locale: Locale = DEFAUL
     url: absoluteUrl(leaguePath(league.id, league.name, locale)),
     logo: league.logo,
     areaServed: league.country?.name,
+  };
+}
+
+export interface BreadcrumbItem {
+  name: string;
+  path: string;
+}
+
+/** BreadcrumbList matching the page's place in the site (Home is prepended). */
+export function breadcrumbSchema(locale: Locale, items: BreadcrumbItem[]) {
+  const home: BreadcrumbItem = { name: locale === 'ar' ? 'الرئيسية' : 'Home', path: locale === 'ar' ? '/ar' : '/' };
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [home, ...items.filter((i) => i.name && i.path)].map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
   };
 }
 
