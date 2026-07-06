@@ -164,18 +164,46 @@ function MatchEventsSection({ events, fixture, locale }: { events: RawMatchEvent
   return (
     <CollapsibleCard title={seoText.matchEventsTitle(locale)}>
       <ol className="space-y-1.5 px-4 pb-3">
-        {valid.map((event) => (
-          <li key={event.id} className="text-[13px] leading-relaxed text-gray-600">
-            <span className="font-semibold text-gray-800">{seoText.minuteLabel(locale, event.time)}</span>{' '}
-            {seoText.eventTypeLabel(locale, event.type)}
-            {' – '}
-            <Link href={playerPath(event.player!.id, event.player!.name, locale)} className="font-medium text-gray-800 hover:text-orange-600">
-              {event.player!.name}
-            </Link>
-            {event.assist?.name ? ` (${seoText.assistLabel(locale)}: ${event.assist.name})` : ''}
-            {teamName(event.teamId) ? ` – ${teamName(event.teamId)}` : ''}
-          </li>
-        ))}
+        {valid.map((event) => {
+          // Substitution events carry the incoming player in `assist` and the
+          // outgoing player in `player` (mirrors the interactive Events tab);
+          // an "(assist: …)" reading would mislabel the outgoing player.
+          const isSubstitution = event.type === 8 && !!event.assist?.name;
+          // Only actual goals (1 normal, 2 own goal, 3 penalty) have assists.
+          const showAssist = [1, 2, 3].includes(event.type) && !!event.assist?.name;
+          return (
+            <li key={event.id} className="text-[13px] leading-relaxed text-gray-600">
+              <span className="font-semibold text-gray-800">{seoText.minuteLabel(locale, event.time)}</span>{' '}
+              {seoText.eventTypeLabel(locale, event.type)}
+              {' – '}
+              {isSubstitution ? (
+                <>
+                  {seoText.substitutionInLabel(locale)}:{' '}
+                  {event.assist!.id ? (
+                    <Link href={playerPath(event.assist!.id, event.assist!.name, locale)} className="font-medium text-gray-800 hover:text-orange-600">
+                      {event.assist!.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium text-gray-800">{event.assist!.name}</span>
+                  )}
+                  {locale === 'ar' ? '، ' : ', '}
+                  {seoText.substitutionOutLabel(locale)}:{' '}
+                  <Link href={playerPath(event.player!.id, event.player!.name, locale)} className="font-medium text-gray-800 hover:text-orange-600">
+                    {event.player!.name}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href={playerPath(event.player!.id, event.player!.name, locale)} className="font-medium text-gray-800 hover:text-orange-600">
+                    {event.player!.name}
+                  </Link>
+                  {showAssist ? ` (${seoText.assistLabel(locale)}: ${event.assist!.name})` : ''}
+                </>
+              )}
+              {teamName(event.teamId) ? ` – ${teamName(event.teamId)}` : ''}
+            </li>
+          );
+        })}
       </ol>
     </CollapsibleCard>
   );

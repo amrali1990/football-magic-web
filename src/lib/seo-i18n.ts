@@ -325,6 +325,12 @@ export const seoText = {
   assistLabel(locale: Locale): string {
     return locale === 'ar' ? 'صناعة' : 'assist';
   },
+  substitutionInLabel(locale: Locale): string {
+    return locale === 'ar' ? 'دخول' : 'In';
+  },
+  substitutionOutLabel(locale: Locale): string {
+    return locale === 'ar' ? 'خروج' : 'Out';
+  },
   matchEventsTitle(locale: Locale): string {
     return locale === 'ar' ? 'أحداث المباراة' : 'Match Events';
   },

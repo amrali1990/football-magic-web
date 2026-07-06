@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { getAllLeagues, getTopTeams, getMatchesByDate } from '@/lib/server-api';
-import { absoluteUrl, leaguePath, teamPath, matchPath, languageAlternates } from '@/lib/seo';
+import { getAllLeagues, getTopTeams, getTeamSquad, getMatchesByDate } from '@/lib/server-api';
+import { absoluteUrl, leaguePath, teamPath, playerPath, matchPath, languageAlternates } from '@/lib/seo';
 
 // Regenerate the sitemap at most once per hour.
 export const revalidate = 3600;
@@ -89,6 +89,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     );
   }
 
+  // Players: the API has no bulk player listing, so enumerate the squads of
+  // the top teams (both languages for the localized slugs). Everyone else is
+  // discovered by crawling squad/match links on the team and league pages.
+  const squadTeamIds = teamsEn.slice(0, 25).map((t) => t.id);
+  const [squadsEn, squadsAr] = await Promise.all([
+    Promise.all(squadTeamIds.map((teamId) => getTeamSquad(teamId, 'en'))),
+    Promise.all(squadTeamIds.map((teamId) => getTeamSquad(teamId, 'ar'))),
+  ]);
+  const arPlayerNames = new Map<number, string>(squadsAr.flat().map((p) => [p.id, p.name]));
+  const seenPlayers = new Set<number>();
+  for (const player of squadsEn.flat()) {
+    if (!player?.id || !player.name || seenPlayers.has(player.id)) continue;
+    seenPlayers.add(player.id);
+    entries.push(
+      ...bilingualEntries(
+        playerPath(player.id, player.name, 'en'),
+        playerPath(player.id, arPlayerNames.get(player.id) ?? player.name, 'ar'),
+        now,
+        'weekly',
+        0.5
+      )
+    );
+  }
+
   // Matches in the rolling window
   const arMatchNames = new Map<number, { home: string; away: string }>();
   for (const day of matchDaysAr) {
@@ -120,9 +144,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // Player pages are intentionally not enumerated here: the API exposes no
-  // bulk player listing, so crawlers discover them through squad and match
-  // links on team/league pages instead.
   const seen = new Set<string>();
   return entries.filter((entry) => !seen.has(entry.url) && seen.add(entry.url));
 }
