@@ -14,6 +14,7 @@ import { PlayerTransfersTab } from '@/components/players/PlayerTransfersTab';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SeoIntro } from '@/components/seo/SeoSections';
 import { useRouteLanguageSync } from '@/lib/useRouteLanguageSync';
+import { SidebarScope } from '@/lib/layout-context';
 
 interface PlayerPageClientProps {
   playerId: number;
@@ -58,9 +59,12 @@ export function PlayerPageClient({ playerId, initialData, initialLng = 'en', int
   if (!data) return loading ? <LoadingSpinner /> : null;
 
   const { player, total, teams, years } = data;
+  const currentTeam = teams?.find((t) => !t.national) ?? teams?.[0];
 
   return (
     <div className="flex flex-col">
+      {/* Sidebar shows top leagues/teams from the player's club country. */}
+      {currentTeam?.id ? <SidebarScope params={{ teamId: currentTeam.id }} /> : null}
       <PageHeader>
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-100">

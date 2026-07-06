@@ -17,7 +17,7 @@ import { SeoIntro } from '@/components/seo/SeoSections';
 import { useRouteLanguageSync } from '@/lib/useRouteLanguageSync';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { RightSidebar } from '@/components/layout/RightSidebar';
-import { useRightSidebar } from '@/lib/layout-context';
+import { useRightSidebar, SidebarScope } from '@/lib/layout-context';
 
 interface HomeClientProps {
   /** Server-rendered day (yyyy-MM-dd) whose matches are in initialLeagues. */
@@ -159,6 +159,8 @@ export function HomeClient({ initialDate, initialLeagues, initialTotalPages, ini
 
   return (
     <div className="flex flex-col">
+      {/* Sidebar shows top leagues/teams playing on the selected day. */}
+      <SidebarScope params={{ date: formatDate(selectedDate) }} />
       <PageHeader>
         <div className="px-4 pt-3">
           <h1 className="text-xl font-bold text-gray-900">{t('Matches')}</h1>

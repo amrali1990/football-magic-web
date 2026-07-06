@@ -8,6 +8,7 @@ import { useAppSelector } from '@/store/hooks';
 import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
 import { teamHref, playerHref } from '@/lib/utils';
+import { SidebarScope } from '@/lib/layout-context';
 import { Country, League, Team, Player } from '@/types';
 import { Tabs } from '@/components/ui/Tabs';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -180,6 +181,8 @@ export default function CountryPage() {
 
   return (
     <div className="flex flex-col">
+      {/* Sidebar shows this country's top leagues/teams. */}
+      <SidebarScope params={{ countryCode }} />
       <PageHeader>
         <div className="flex items-center gap-3 px-4 py-3">
           {country?.flag && (

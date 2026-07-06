@@ -17,6 +17,7 @@ import { MatchH2HTab } from '@/components/matches/MatchH2HTab';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SeoIntro } from '@/components/seo/SeoSections';
 import { useRouteLanguageSync } from '@/lib/useRouteLanguageSync';
+import { SidebarScope } from '@/lib/layout-context';
 import { getMatchStatusColor, formatMatchTime, localizeNumber } from '@/lib/utils';
 
 interface MatchPageClientProps {
@@ -87,6 +88,8 @@ export function MatchPageClient({ matchId, initialData, initialLng = 'en', intro
 
   return (
     <div className="flex flex-col">
+      {/* Sidebar shows top leagues/teams from this competition's country. */}
+      {fixture.league?.id ? <SidebarScope params={{ leagueId: fixture.league.id }} /> : null}
       {/* The visual header is a logo/score grid; this gives the page its
           single H1 (the match itself) for the document outline. */}
       <h1 className="sr-only">{scoreline}</h1>

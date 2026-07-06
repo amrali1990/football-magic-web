@@ -18,6 +18,7 @@ import { TeamTrophiesTab } from '@/components/teams/TeamTrophiesTab';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SeoIntro } from '@/components/seo/SeoSections';
 import { useRouteLanguageSync } from '@/lib/useRouteLanguageSync';
+import { SidebarScope } from '@/lib/layout-context';
 
 interface TeamPageClientProps {
   teamId: number;
@@ -82,6 +83,8 @@ export function TeamPageClient({ teamId, initialData, initialLng = 'en', intro, 
 
   return (
     <div className="flex flex-col">
+      {/* Sidebar shows top leagues/teams from this team's country. */}
+      <SidebarScope params={{ teamId }} />
       <PageHeader>
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="relative h-9 w-9 shrink-0">

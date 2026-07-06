@@ -158,6 +158,12 @@ export const api = {
       apiCall({ url: '/player/getPlayersByCountryCode', method: 'GET', params: { code: countryCode, page }, lng }),
   },
 
+  sidebar: {
+    // Context-aware top leagues/teams for the right sidebar (web-only endpoint).
+    get: (params: { date?: string; countryCode?: string; leagueId?: number; teamId?: number }, lng: string) =>
+      apiCall({ url: '/leagues/getSidebar', method: 'GET', params, lng }),
+  },
+
   countries: {
     getAll: (lng: string) =>
       apiCall({ url: '/countries/getCountries', method: 'GET', lng }),

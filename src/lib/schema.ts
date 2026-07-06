@@ -18,6 +18,10 @@ export function organizationSchema() {
     logo: absoluteUrl('/icon.png'),
     description:
       'Football Magic provides live football scores, fixtures, results, league standings, team squads, and player statistics for leagues and cups worldwide, in English and Arabic.',
+    sameAs: [
+      'https://apps.apple.com/sa/app/football-magic-live-scores/id6495483675',
+      'https://play.google.com/store/apps/details?id=com.magic.football',
+    ],
   };
 }
 

@@ -19,6 +19,7 @@ import { LeagueInfoTab } from '@/components/leagues/LeagueInfoTab';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SeoIntro } from '@/components/seo/SeoSections';
 import { useRouteLanguageSync } from '@/lib/useRouteLanguageSync';
+import { SidebarScope } from '@/lib/layout-context';
 import { localizeNumber, recallLeagueName } from '@/lib/utils';
 
 interface LeaguePageClientProps {
@@ -90,6 +91,8 @@ export function LeaguePageClient({ leagueId, initialData, initialLng = 'en', int
 
   return (
     <div className="flex flex-col">
+      {/* Sidebar shows top leagues/teams from this league's country. */}
+      <SidebarScope params={{ leagueId }} />
       <PageHeader>
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="relative h-9 w-9 shrink-0">

@@ -2,7 +2,7 @@
 
 > Football Magic (https://www.football-magic.com) provides live football (soccer) scores, fixtures, results, league standings, team squads, transfers, and player statistics for leagues and cup competitions worldwide, in English and Arabic. Data covers domestic leagues (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Saudi Pro League, Egyptian Premier League, and many more) and international competitions (UEFA Champions League, World Cup, AFC and CAF competitions).
 
-Football Magic is also available as a mobile app (iOS and Android). The website serves the same live data as the app.
+Football Magic is also available as a mobile app: [iOS](https://apps.apple.com/sa/app/football-magic-live-scores/id6495483675) and [Android](https://play.google.com/store/apps/details?id=com.magic.football). The website serves the same live data as the app.
 
 ## Languages
 
