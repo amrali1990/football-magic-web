@@ -1,8 +1,9 @@
 import axios, { Method } from 'axios';
+import { getGuestToken, clearGuestToken } from './guest';
+import { getDeviceId } from './device';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.football-magic.com';
-const BASIC_AUTH_USERNAME = process.env.NEXT_PUBLIC_BASIC_AUTH_USERNAME || 'admin';
-const BASIC_AUTH_PASSWORD = process.env.NEXT_PUBLIC_BASIC_AUTH_PASSWORD || 'admin123';
+const CLIENT_KEY = process.env.NEXT_PUBLIC_CLIENT_KEY || '';
 const API_TIMEOUT = 30000;
 
 interface ApiCallParams {
@@ -19,6 +20,8 @@ axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      // A stale/expired guest token also 401s — drop it so the next call re-fetches.
+      clearGuestToken();
       if (typeof window !== 'undefined') {
         localStorage.removeItem('persist:root');
         window.dispatchEvent(new Event('auth:logout'));
@@ -42,12 +45,15 @@ const apiCall = async ({
     lng,
     ...additionalHeaders,
   };
+  if (CLIENT_KEY) headers['X-Client-Key'] = CLIENT_KEY;
+  const deviceId = getDeviceId();
+  if (deviceId) headers['X-Device-Id'] = deviceId;
 
   if (token && token.trim() !== '') {
     headers.Authorization = `Bearer ${token}`;
   } else {
-    const credentials = btoa(`${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD}`);
-    headers.Authorization = `Basic ${credentials}`;
+    // No user session: authenticate as a scoped, read-only guest.
+    headers.Authorization = `Bearer ${await getGuestToken()}`;
   }
 
   const response = await axios({

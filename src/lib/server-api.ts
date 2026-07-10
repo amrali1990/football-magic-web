@@ -18,9 +18,11 @@ import {
 } from '@/lib/normalize';
 import type { League, Fixture, LeagueWithFixtures, FixtureByDate } from '@/types';
 
+import { getServerGuestToken, invalidateServerGuestToken, SSR_DEVICE_ID } from './guest-server';
+import { ssrAuthHeaders } from './ssr-auth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.football-magic.com';
-const BASIC_AUTH_USERNAME = process.env.NEXT_PUBLIC_BASIC_AUTH_USERNAME || 'admin';
-const BASIC_AUTH_PASSWORD = process.env.NEXT_PUBLIC_BASIC_AUTH_PASSWORD || 'admin123';
+const CLIENT_KEY = process.env.CLIENT_KEY || process.env.NEXT_PUBLIC_CLIENT_KEY || '';
 
 interface ServerFetchOptions {
   method?: 'GET' | 'POST';
@@ -31,23 +33,38 @@ interface ServerFetchOptions {
   revalidate?: number;
 }
 
-async function serverFetch<T>(path: string, options: ServerFetchOptions = {}): Promise<T | null> {
+async function doFetch<T>(path: string, options: ServerFetchOptions, token: string): Promise<Response> {
   const { method = 'POST', body, params, headers, lng = 'en', revalidate = 3600 } = options;
-  const auth = Buffer.from(`${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD}`).toString('base64');
   const qs = params ? `?${new URLSearchParams(params)}` : '';
+  const reqHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+    'X-Device-Id': SSR_DEVICE_ID,
+    lng,
+    ...headers,
+    // Trusted-SSR signature: bypasses gateway rate-limiting within the monthly quota.
+    ...ssrAuthHeaders(method, `${path}${qs}`, body),
+  };
+  if (CLIENT_KEY) reqHeaders['X-Client-Key'] = CLIENT_KEY;
+  return fetch(`${API_URL}${path}${qs}`, {
+    method,
+    headers: reqHeaders,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    next: { revalidate },
+    signal: AbortSignal.timeout(15000),
+  });
+}
+
+async function serverFetch<T>(path: string, options: ServerFetchOptions = {}): Promise<T | null> {
   try {
-    const res = await fetch(`${API_URL}${path}${qs}`, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${auth}`,
-        lng,
-        ...headers,
-      },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      next: { revalidate },
-      signal: AbortSignal.timeout(15000),
-    });
+    let token = await getServerGuestToken();
+    let res = await doFetch<T>(path, options, token);
+    // A stale cached guest token yields 401 — refresh once and retry.
+    if (res.status === 401) {
+      invalidateServerGuestToken();
+      token = await getServerGuestToken();
+      res = await doFetch<T>(path, options, token);
+    }
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {

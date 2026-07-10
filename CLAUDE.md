@@ -17,7 +17,9 @@ npm run lint    # Run ESLint
 ### API Layer
 - `src/lib/api.ts` — centralized API client mirroring the mobile app's `apiCall.tsx`
 - Same backend: `https://api.football-magic.com`
-- Auth: Bearer token for logged-in users, Basic Auth fallback
+- Auth: Bearer token for logged-in users; scoped read-only **guest token**
+  (`/auth/guest`, see `src/lib/guest.ts` / `guest-server.ts`) when no user is
+  logged in — the old Basic-auth fallback has been removed
 - All requests send `lng` header for server-side localization
 
 ### State Management
