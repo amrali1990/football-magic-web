@@ -80,9 +80,11 @@ export const api = {
     register: (data: Record<string, unknown>) =>
       apiCall({ url: '/registration/signup', method: 'POST', data }),
     updateProfile: (data: Record<string, unknown>, token: string) =>
-      apiCall({ url: '/users/update', method: 'POST', data, token }),
+      apiCall({ url: '/users/update', method: 'PUT', data, token }),
     updatePassword: (data: Record<string, unknown>, token: string) =>
-      apiCall({ url: '/users/updatePassword', method: 'POST', data, token }),
+      apiCall({ url: '/users/updatePassword', method: 'PUT', data, token }),
+    deleteAccount: (token: string) =>
+      apiCall({ url: '/users/delete', method: 'DELETE', token }),
   },
 
   matches: {

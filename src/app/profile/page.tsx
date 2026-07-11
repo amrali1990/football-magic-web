@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { login, logout } from '@/store/slices/authSlice';
@@ -8,7 +8,7 @@ import { useTranslation } from '@/i18n';
 import { api } from '@/lib/api';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { User } from '@/types';
+import { Country, User } from '@/types';
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
@@ -17,10 +17,8 @@ export default function ProfilePage() {
   const { code: lng } = useAppSelector((state) => state.language.language);
   const { t } = useTranslation(lng);
 
-  const [form, setForm] = useState({
-    username: user?.username || '',
-    email: user?.email || '',
-  });
+  const [countryId, setCountryId] = useState(user?.countryId || 0);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
     newPassword: '',
@@ -29,13 +27,25 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!user) return;
+    api.countries.getAll(lng)
+      .then((data) => setCountries(data as Country[]))
+      .catch(() => setCountries([]));
+  }, [user, lng]);
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setLoading(true);
     try {
-      const data = await api.auth.updateProfile(form, user!.accessToken) as User;
+      // The backend replaces countryId/gender/birthDate wholesale, so echo the
+      // unchanged fields back to avoid wiping them.
+      const data = await api.auth.updateProfile(
+        { countryId, gender: user!.gender, birthDate: user!.birthDate },
+        user!.accessToken
+      ) as User;
       dispatch(login({ ...user!, ...data }));
       setSuccess('Profile updated');
     } catch (err) {
@@ -87,18 +97,28 @@ export default function ProfilePage() {
             <form onSubmit={handleUpdateProfile} className="space-y-4 rounded-xl bg-white p-4 shadow-sm">
               <input
                 type="text"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                value={user.username}
                 placeholder={t('Username')}
-                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-orange-500"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500 outline-none"
+                disabled
               />
               <input
                 type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                value={user.email}
                 placeholder={t('Email')}
-                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-orange-500"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500 outline-none"
+                disabled
               />
+              <select
+                value={countryId}
+                onChange={(e) => setCountryId(Number(e.target.value))}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-orange-500"
+              >
+                <option value={0} disabled>{t('Country')}</option>
+                {countries.map((country) => (
+                  <option key={country.id} value={country.id}>{country.name}</option>
+                ))}
+              </select>
               <button
                 type="submit"
                 disabled={loading}

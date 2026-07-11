@@ -6,8 +6,9 @@ export interface User {
   refreshToken: string;
   leagueIds: number[];
   teamIds: number[];
-  gender?: string;
+  gender?: string | number;
   birthDate?: string;
+  countryId?: number;
   country?: Country;
 }
 
