@@ -5,6 +5,7 @@ import authReducer from './slices/authSlice';
 import leagueSeasonReducer from './slices/leagueSeasonSlice';
 import languageReducer from './slices/languageSlice';
 import loadingReducer from './slices/loadingSlice';
+import { registerSessionStore } from '@/lib/session';
 
 const persistConfig = {
   key: 'root',
@@ -32,6 +33,8 @@ export const makeStore = () => {
       }),
   });
   const persistor = persistStore(store);
+  // Let the API layer read the logged-in user's tokens without a store import.
+  registerSessionStore(store);
   return { store, persistor };
 };
 

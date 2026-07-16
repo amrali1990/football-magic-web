@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { showLoading, hideLoading } from '@/store/slices/loadingSlice';
 import { useTranslation } from '@/i18n';
@@ -18,6 +19,23 @@ import { useRouteLanguageSync } from '@/lib/useRouteLanguageSync';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import { useRightSidebar, SidebarScope } from '@/lib/layout-context';
+
+/**
+ * Feeds the router's `?date=` param into HomeClient. Lives in its own
+ * component under a <Suspense> boundary: useSearchParams() on a statically
+ * rendered route bails the enclosing boundary out to client-side rendering,
+ * and scoping it to this null-rendering child keeps the page HTML intact
+ * (HomeClient itself must never call useSearchParams — see CLAUDE.md).
+ * Unlike a window.location read on mount, the router param updates on every
+ * navigation — date taps (history.replaceState), the Matches tab Link
+ * (query-only navigation that leaves this tree mounted), and back/forward.
+ */
+function UrlDateSync({ onDateParam }: { onDateParam: (dateParam: string | null) => void }) {
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get('date');
+  useEffect(() => onDateParam(dateParam), [dateParam, onDateParam]);
+  return null;
+}
 
 interface HomeClientProps {
   /** Server-rendered day (yyyy-MM-dd) whose matches are in initialLeagues. */
@@ -55,21 +73,33 @@ export function HomeClient({ initialDate, initialLeagues, initialTotalPages, ini
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
-  // Seed the selected day from the URL (`?date=yyyy-MM-dd`) so shared or
-  // bookmarked links open on the right day (replaces the old useSearchParams
-  // read, which forced this subtree to render client-side only).
-  useEffect(() => {
-    const fromUrl = parseDate(new URLSearchParams(window.location.search).get('date'));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (fromUrl && formatDate(fromUrl) !== initialDate) setSelectedDate(fromUrl);
+  // Follow the router's `?date=` param (via UrlDateSync below). First call is
+  // the initial mount: only honor an explicit ?date= from a shared/bookmarked
+  // link. Later calls are real navigations — a date tap's replaceState (same
+  // value, ignored), browser back/forward, or the Matches tab Link. That last
+  // one is a query-only navigation on a static route: it strips ?date= but
+  // leaves this tree mounted, so absent param must reset the state to today
+  // or the page keeps showing the previously selected day under a bare `/`.
+  const urlDateConsumedOnce = useRef(false);
+  const handleUrlDate = useCallback((dateParam: string | null) => {
+    const fromUrl = parseDate(dateParam);
+    if (!urlDateConsumedOnce.current) {
+      urlDateConsumedOnce.current = true;
+      if (fromUrl && formatDate(fromUrl) !== initialDate) setSelectedDate(fromUrl);
+      return;
+    }
+    const next = fromUrl ?? new Date();
+    setSelectedDate((prev) => (formatDate(next) === formatDate(prev) ? prev : next));
   }, [initialDate]);
 
-  // `selectedDate` is the single runtime source of truth. We mirror it into
-  // the URL with history.replaceState rather than router.replace(): a
-  // query-only router navigation on a statically-rendered route remounts this
-  // subtree against a stale snapshot, which made the 2nd+ date tap appear
-  // stuck. Rewriting the address bar directly keeps the URL shareable while
-  // leaving React in full control of the rendered state.
+  // Date taps go through router.replace so the router's canonical URL (and
+  // useSearchParams) track the selected day. A raw history.replaceState only
+  // rewrites the address bar — the router still believes it is at `/`, so a
+  // later Matches-tab <Link href="/"> becomes a no-op navigation that strips
+  // ?date= without re-rendering anything, leaving the old day on screen under
+  // a bare `/`. We still set the state eagerly: the UrlDateSync round-trip
+  // then sees an already-matching date and does nothing.
+  const router = useRouter();
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
     const params = new URLSearchParams(window.location.search);
@@ -79,22 +109,8 @@ export function HomeClient({ initialDate, initialLeagues, initialTotalPages, ini
       params.set('date', formatDate(date));
     }
     const qs = params.toString();
-    window.history.replaceState(
-      window.history.state,
-      '',
-      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
-    );
-  }, []);
-
-  // Follow browser back/forward into local state (the address bar may carry a
-  // different `?date=` from a prior history entry).
-  useEffect(() => {
-    const onPopState = () => {
-      setSelectedDate(parseDate(new URLSearchParams(window.location.search).get('date')) ?? new Date());
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+    router.replace(qs ? `${window.location.pathname}?${qs}` : window.location.pathname, { scroll: false });
+  }, [router]);
 
   useRightSidebar(() => <RightSidebar />);
 
@@ -159,6 +175,9 @@ export function HomeClient({ initialDate, initialLeagues, initialTotalPages, ini
 
   return (
     <div className="flex flex-col">
+      <Suspense fallback={null}>
+        <UrlDateSync onDateParam={handleUrlDate} />
+      </Suspense>
       {/* Sidebar shows top leagues/teams playing on the selected day. */}
       <SidebarScope params={{ date: formatDate(selectedDate) }} />
       <PageHeader>

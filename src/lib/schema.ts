@@ -97,6 +97,59 @@ export function personSchema(
   };
 }
 
+// Pseudo-countries the football API uses for international competitions
+// (league.country of e.g. "World Cup - Qualification Europe") — not valid
+// postal-address countries, so they must not end up in addressCountry.
+const PSEUDO_COUNTRIES = new Set([
+  'world', 'international', 'europe', 'africa', 'asia',
+  'south america', 'north america', 'oceania',
+  'العالم', 'دولي', 'أوروبا', 'أفريقيا', 'آسيا', 'أمريكا الجنوبية', 'أمريكا الشمالية',
+]);
+
+function realCountryName(name?: string | null): string | undefined {
+  const trimmed = name?.trim();
+  if (!trimmed || PSEUDO_COUNTRIES.has(trimmed.toLowerCase())) return undefined;
+  return trimmed;
+}
+
+/**
+ * Google requires Event.location — an Event without it gets "Missing field
+ * location" in Search Console, and <JsonLd /> silently strips an undefined
+ * one. Always returns a Place (with a nested PostalAddress when any address
+ * data exists; never a bare PostalAddress), falling back from the stadium to
+ * the venue city, the league's country, and finally the home team's name —
+ * for national teams that IS the country, and for clubs it is still the
+ * truthful "at <home team>" place. Matches are physical events
+ * (OfflineEventAttendanceMode), so a physical location is always appropriate.
+ */
+function eventLocationSchema(fixture: Fixture) {
+  const venueName = fixture.venue?.name?.trim() || undefined;
+  const city = fixture.venue?.city?.trim() || undefined;
+  const street = fixture.venue?.address?.trim() || undefined;
+  const country = realCountryName(fixture.league?.country?.name);
+
+  const name = venueName ?? city ?? country ?? (fixture.teams?.home?.name?.trim() || undefined);
+  if (!name && !country) {
+    // Unreachable for real fixtures (home team always has a name); the guard
+    // exists so a regression is loud in dev instead of silently shipping
+    // Events that fail Google's required-field check again.
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[schema] SportsEvent for fixture ${fixture.id} has no resolvable location — it will fail Google's Event validation`);
+    }
+    return undefined;
+  }
+  return {
+    '@type': 'Place',
+    name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: street,
+      addressLocality: city,
+      addressCountry: country,
+    },
+  };
+}
+
 // schema.org only defines scheduled/postponed/cancelled statuses for events.
 function eventStatus(statusShort?: string) {
   if (!statusShort) return undefined;
@@ -136,7 +189,10 @@ export function sportsEventSchema(fixture: Fixture, locale: Locale = DEFAULT_LOC
     url: absoluteUrl(matchPath(fixture.id, home?.name, away?.name, locale)),
     startDate: fixture.date,
     eventStatus: eventStatus(fixture.status?.short),
-    location: venueSchema(fixture.venue),
+    // Football matches are always physical events, which is also why a
+    // physical location below is always emitted.
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: eventLocationSchema(fixture),
     homeTeam: home?.name
       ? { '@type': 'SportsTeam', name: home.name, sport: SPORT, url: absoluteUrl(teamPath(home.id, home.name, locale)), logo: home.logo }
       : undefined,

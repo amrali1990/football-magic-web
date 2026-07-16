@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getDeviceId } from './device';
+import { getCountry } from './country';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.football-magic.com';
 
@@ -58,6 +59,8 @@ export async function getGuestToken(): Promise<string> {
       if (CLIENT_KEY) headers['X-Client-Key'] = CLIENT_KEY;
       const deviceId = getDeviceId();
       if (deviceId) headers['X-Device-Id'] = deviceId;
+      const country = getCountry();
+      if (country) headers['X-Country'] = country;
       const res = await axios.post<GuestTokenResponse>(
         `${API_URL}/auth/guest`,
         { client: 'web' },

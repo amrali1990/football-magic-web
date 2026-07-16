@@ -1,6 +1,10 @@
 import axios, { Method } from 'axios';
 import { getGuestToken, clearGuestToken } from './guest';
 import { getDeviceId } from './device';
+import { getCountry } from './country';
+import { getSessionUser, sessionDispatch } from './session';
+import { login } from '@/store/slices/authSlice';
+import type { User } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.football-magic.com';
 const CLIENT_KEY = process.env.NEXT_PUBLIC_CLIENT_KEY || '';
@@ -16,16 +20,72 @@ interface ApiCallParams {
   lng?: string;
 }
 
+// Auth endpoints report their own failures (wrong credentials, invalid refresh
+// token) — the 401 interceptor must not treat those as an expired session, and
+// the logged-in user's token is never auto-attached to them.
+const AUTH_PATHS = ['/auth/signin', '/auth/refreshToken', '/auth/login', '/auth/guest'];
+const isAuthPath = (url?: string): boolean => AUTH_PATHS.some((path) => (url || '').includes(path));
+
+// Access tokens can expire mid-session: on a 401, exchange the stored refresh
+// token for a fresh session and transparently retry the failed request once.
+// Single-flight so parallel 401s trigger one refresh.
+let refreshInflight: Promise<string> | null = null;
+
+async function refreshAccessToken(refreshToken: string): Promise<string> {
+  if (refreshInflight) return refreshInflight;
+  refreshInflight = (async () => {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (CLIENT_KEY) headers['X-Client-Key'] = CLIENT_KEY;
+      const deviceId = getDeviceId();
+      if (deviceId) headers['X-Device-Id'] = deviceId;
+      const res = await axios.post(
+        `${API_URL}/auth/refreshToken`,
+        { refreshToken },
+        { headers, timeout: API_TIMEOUT },
+      );
+      // Backend (JwtResponse) may return the access token as `token`; the app
+      // reads `user.accessToken` — normalize like the mobile app does.
+      const data = res.data as User & { token?: string };
+      const accessToken = data.accessToken ?? data.token;
+      if (!accessToken) throw new Error('Refresh response missing access token');
+      const user: User = { ...data, accessToken };
+      sessionDispatch(login(user));
+      return accessToken;
+    } finally {
+      refreshInflight = null;
+    }
+  })();
+  return refreshInflight;
+}
+
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      // A stale/expired guest token also 401s — drop it so the next call re-fetches.
-      clearGuestToken();
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('persist:root');
-        window.dispatchEvent(new Event('auth:logout'));
+    if (error.response?.status !== 401 || isAuthPath(error.config?.url)) {
+      return Promise.reject(error);
+    }
+    // A stale/expired guest token also 401s — drop it so the next call re-fetches.
+    clearGuestToken();
+
+    // Retry once with a refreshed user token (or a fresh guest token when
+    // nobody is logged in) before declaring the session dead.
+    const original = error.config;
+    if (original && !original.__retried) {
+      original.__retried = true;
+      try {
+        const refreshToken = getSessionUser()?.refreshToken;
+        const newToken = refreshToken ? await refreshAccessToken(refreshToken) : await getGuestToken();
+        original.headers = { ...original.headers, Authorization: `Bearer ${newToken}` };
+        return axios(original);
+      } catch {
+        // fall through to the session-expired handling below
       }
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('persist:root');
+      window.dispatchEvent(new Event('auth:logout'));
     }
     return Promise.reject(error);
   }
@@ -48,11 +108,20 @@ const apiCall = async ({
   if (CLIENT_KEY) headers['X-Client-Key'] = CLIENT_KEY;
   const deviceId = getDeviceId();
   if (deviceId) headers['X-Device-Id'] = deviceId;
+  const country = getCountry();
+  if (country) headers['X-Country'] = country;
 
-  if (token && token.trim() !== '') {
-    headers.Authorization = `Bearer ${token}`;
+  // Handle authentication: an explicitly passed token wins, then the logged-in
+  // user's session token from the store, then a scoped read-only guest token.
+  // Most call sites don't pass `token` — without the store fallback every call
+  // from a logged-in session went out (and was audited) as guest.
+  const sessionToken =
+    (token && token.trim() !== '' ? token : undefined) ??
+    (isAuthPath(url) ? undefined : getSessionUser()?.accessToken);
+  if (sessionToken) {
+    headers.Authorization = `Bearer ${sessionToken}`;
   } else {
-    // No user session: authenticate as a scoped, read-only guest.
+    // No user session (or an auth endpoint): authenticate as a guest.
     headers.Authorization = `Bearer ${await getGuestToken()}`;
   }
 
