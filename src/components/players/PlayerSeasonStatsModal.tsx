@@ -115,7 +115,7 @@ export function PlayerSeasonStatsModal({ stat, lng, onClose }: PlayerSeasonStats
               <Image src={stat.league.logo} alt={stat.league.name} fill className="object-contain" unoptimized />
             )}
           </div>
-          <Link href={leagueHref(stat.league.id, stat.league.name)} onClick={() => rememberLeagueName(stat.league.id, stat.league.name, lng)} className="min-w-0 flex-1 truncate text-[15px] font-bold text-gray-900 hover:text-orange-500">
+          <Link href={leagueHref(stat.league.id, stat.league.name, undefined, lng)} onClick={() => rememberLeagueName(stat.league.id, stat.league.name, lng)} className="min-w-0 flex-1 truncate text-[15px] font-bold text-gray-900 hover:text-orange-500">
             {stat.league.name}
           </Link>
           <button

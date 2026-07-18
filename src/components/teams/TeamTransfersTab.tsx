@@ -19,7 +19,7 @@ interface TeamTransfersTabProps {
 
 export type TransferTeamInfo = { id: number; name: string; logo: string } | null | undefined;
 
-export function TransferTeam({ team }: { team: TransferTeamInfo }) {
+export function TransferTeam({ team, lng }: { team: TransferTeamInfo; lng: string }) {
   if (!team) {
     return (
       <div className="flex min-w-0 flex-col items-center gap-1">
@@ -29,7 +29,7 @@ export function TransferTeam({ team }: { team: TransferTeamInfo }) {
     );
   }
   return (
-    <Link href={teamHref(team.id, team.name)} className="flex min-w-0 flex-col items-center gap-1 transition-colors hover:text-orange-500">
+    <Link href={teamHref(team.id, team.name, lng)} className="flex min-w-0 flex-col items-center gap-1 transition-colors hover:text-orange-500">
       <div className="relative h-8 w-8 shrink-0">
         {team.logo ? (
           <Image src={team.logo} alt={team.name} fill className="object-contain" unoptimized />
@@ -98,7 +98,7 @@ export function TeamTransfersTab({ teamId, lng }: TeamTransfersTabProps) {
 
             {/* Player name */}
             <Link
-              href={playerHref(transfer.player.id, transfer.player.name)}
+              href={playerHref(transfer.player.id, transfer.player.name, lng)}
               className="mt-2 line-clamp-1 text-center text-sm font-semibold text-gray-900 hover:text-orange-500"
             >
               {transfer.player.name}
@@ -106,9 +106,9 @@ export function TeamTransfersTab({ teamId, lng }: TeamTransfersTabProps) {
 
             {/* Teams with directional arrow */}
             <div className="mt-3 flex w-full items-start justify-center gap-3">
-              <TransferTeam team={transfer.teams?.out} />
+              <TransferTeam team={transfer.teams?.out} lng={lng} />
               <ArrowRight className="mt-1.5 h-4 w-4 shrink-0 text-gray-400" />
-              <TransferTeam team={transfer.teams?.in} />
+              <TransferTeam team={transfer.teams?.in} lng={lng} />
             </div>
           </div>
         ))}

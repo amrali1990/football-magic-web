@@ -54,9 +54,9 @@ export function PlayerTransfersTab({ playerId, lng }: PlayerTransfersTabProps) {
 
           {/* Teams with directional arrow */}
           <div className="flex w-full items-start justify-center gap-3">
-            <TransferTeam team={transfer.teams?.out} />
+            <TransferTeam team={transfer.teams?.out} lng={lng} />
             <ArrowRight className="mt-1.5 h-4 w-4 shrink-0 text-gray-400" />
-            <TransferTeam team={transfer.teams?.in} />
+            <TransferTeam team={transfer.teams?.in} lng={lng} />
           </div>
         </div>
       ))}

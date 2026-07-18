@@ -58,7 +58,7 @@ function EventContent({ event, lng, t, align }: { event: MatchEvent; lng: string
   return (
     <div className={`min-w-0 ${textAlign}`}>
       {event.player?.id ? (
-        <Link href={playerHref(event.player.id, event.player.name)} className="text-[13px] font-medium text-gray-900 hover:underline">
+        <Link href={playerHref(event.player.id, event.player.name, lng)} className="text-[13px] font-medium text-gray-900 hover:underline">
           {event.player.name}
         </Link>
       ) : (
@@ -67,14 +67,14 @@ function EventContent({ event, lng, t, align }: { event: MatchEvent; lng: string
       {isSub && event.assist?.name && (
         <p className="text-[11px] text-green-600">
           ↑ {event.assist.id ? (
-            <Link href={playerHref(event.assist.id, event.assist.name)} className="hover:underline">{event.assist.name}</Link>
+            <Link href={playerHref(event.assist.id, event.assist.name, lng)} className="hover:underline">{event.assist.name}</Link>
           ) : event.assist.name}
         </p>
       )}
       {isGoal && event.assist?.name && (
         <p className="text-[11px] text-gray-500">
           {t('Assisted_By')}: {event.assist.id ? (
-            <Link href={playerHref(event.assist.id, event.assist.name)} className="hover:underline">{event.assist.name}</Link>
+            <Link href={playerHref(event.assist.id, event.assist.name, lng)} className="hover:underline">{event.assist.name}</Link>
           ) : event.assist.name}
         </p>
       )}

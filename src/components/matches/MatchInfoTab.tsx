@@ -77,7 +77,7 @@ export function MatchInfoTab({ fixture, statistics, lng }: MatchInfoTabProps) {
       icon: Trophy,
       label: t('Leagues'),
       value: fixture.league?.name,
-      href: fixture.league?.id ? leagueHref(fixture.league.id, fixture.league.name, fixture.league.logo) : undefined,
+      href: fixture.league?.id ? leagueHref(fixture.league.id, fixture.league.name, fixture.league.logo, lng) : undefined,
       onClick: fixture.league?.id ? () => rememberLeagueName(fixture.league.id, fixture.league.name, lng) : undefined,
     },
     { icon: Flag, label: t('Round'), value: fixture.round ? localizeNumber(fixture.round, lng) : undefined },

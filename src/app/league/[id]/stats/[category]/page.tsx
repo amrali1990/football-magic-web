@@ -121,7 +121,7 @@ export default function LeagueStatsPage() {
               <div key={`${stat.playerId}-${index}`}>
                 {index > 0 && <div className="mx-4 border-t border-gray-50" />}
                 <Link
-                  href={playerHref(stat.playerId, stat.playerName)}
+                  href={playerHref(stat.playerId, stat.playerName, lng)}
                   className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50"
                 >
                   <span className="w-6 text-center text-[12px] font-semibold text-gray-400">

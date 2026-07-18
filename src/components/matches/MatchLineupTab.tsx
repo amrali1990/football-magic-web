@@ -20,11 +20,13 @@ function PlayerClickable({
   player,
   onSelect,
   className,
+  lng,
   children,
 }: {
   player: LineupPlayer;
   onSelect: (p: LineupPlayer) => void;
   className?: string;
+  lng: string;
   children: React.ReactNode;
 }) {
   if (player.statistics) {
@@ -35,7 +37,7 @@ function PlayerClickable({
     );
   }
   return (
-    <Link href={playerHref(player.player.id, player.player.name)} className={className}>
+    <Link href={playerHref(player.player.id, player.player.name, lng)} className={className}>
       {children}
     </Link>
   );
@@ -73,7 +75,7 @@ function PitchPlayerCard({ player, lng, onSelect }: { player: LineupPlayer; lng:
     : player.player.name;
 
   return (
-    <PlayerClickable player={player} onSelect={onSelect} className="flex flex-col items-center gap-0.5">
+    <PlayerClickable player={player} onSelect={onSelect} lng={lng} className="flex flex-col items-center gap-0.5">
       <div className="relative">
         <div className="relative h-11 w-11 overflow-hidden rounded-full border-2 border-white/60 bg-white/20 shadow-md">
           {player.player.photo ? (
@@ -136,6 +138,7 @@ function TeamSubstitutes({ lineup, lng, t, onSelect }: { lineup: TeamLineup; lng
               <PlayerClickable
                 player={p}
                 onSelect={onSelect}
+                lng={lng}
                 className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-gray-50"
               >
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-bold text-gray-600">

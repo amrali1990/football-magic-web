@@ -29,7 +29,7 @@ function FavoriteTeams({ data, lng }: { data: FavoritesData; lng: string }) {
     <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 bg-white">
       {teams.map((item) => (
         <div key={item.team.id} className="flex items-center gap-3 px-4 py-3">
-          <Link href={teamHref(item.team.id, item.team.name)} className="flex flex-1 items-center gap-3">
+          <Link href={teamHref(item.team.id, item.team.name, lng)} className="flex flex-1 items-center gap-3">
             <div className="relative h-9 w-9 shrink-0">
               <Image src={item.team.logo} alt={item.team.name} fill className="object-contain" unoptimized />
             </div>
@@ -51,7 +51,7 @@ function FavoriteLeagues({ data, lng }: { data: FavoritesData; lng: string }) {
     <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 bg-white">
       {leagues.map((item) => (
         <div key={item.league.id} className="flex items-center gap-3 px-4 py-3">
-          <Link href={leagueHref(item.league.id, item.league.name, item.league.logo)} onClick={() => rememberLeagueName(item.league.id, item.league.name, lng)} className="flex flex-1 items-center gap-3">
+          <Link href={leagueHref(item.league.id, item.league.name, item.league.logo, lng)} onClick={() => rememberLeagueName(item.league.id, item.league.name, lng)} className="flex flex-1 items-center gap-3">
             <div className="relative h-8 w-8 shrink-0">
               <Image src={item.league.logo} alt={item.league.name} fill className="object-contain" unoptimized />
             </div>

@@ -94,7 +94,7 @@ export function TeamLeagueSeasonList({ teamId, lng, source }: TeamLeagueSeasonLi
       {leagues.map((item) => (
         <div key={item.league.id} className="rounded-xl border border-gray-100 bg-white shadow-sm">
           <Link
-            href={leagueHref(item.league.id, item.league.name, item.league.logo)}
+            href={leagueHref(item.league.id, item.league.name, item.league.logo, lng)}
             onClick={() => rememberLeagueName(item.league.id, item.league.name, lng)}
             className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 rounded-t-xl"
           >

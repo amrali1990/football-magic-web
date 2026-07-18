@@ -28,11 +28,11 @@ function getSeasonLabel(season: Winner['season']): string {
   return season != null ? String(season) : '';
 }
 
-function WinnerRow({ team, label, variant }: { team: NonNullable<TeamInfo>; label: string; variant: 'winner' | 'runnerUp' }) {
+function WinnerRow({ team, label, variant, lng }: { team: NonNullable<TeamInfo>; label: string; variant: 'winner' | 'runnerUp'; lng: string }) {
   const isWinner = variant === 'winner';
   return (
     <Link
-      href={teamHref(team.id, team.name)}
+      href={teamHref(team.id, team.name, lng)}
       className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 ${isWinner ? 'bg-amber-50/40' : ''}`}
     >
       <div className="relative h-9 w-9 shrink-0">
@@ -98,8 +98,8 @@ export function LeagueWinnersTab({ leagueId, lng }: LeagueWinnersTabProps) {
 
             {/* Winner & runner-up */}
             <div className="divide-y divide-gray-50">
-              {w.winner && <WinnerRow team={w.winner} label={t('winner')} variant="winner" />}
-              {w.runnerUp && <WinnerRow team={w.runnerUp} label={t('runnerUp')} variant="runnerUp" />}
+              {w.winner && <WinnerRow team={w.winner} label={t('winner')} variant="winner" lng={lng} />}
+              {w.runnerUp && <WinnerRow team={w.runnerUp} label={t('runnerUp')} variant="runnerUp" lng={lng} />}
             </div>
           </div>
         );

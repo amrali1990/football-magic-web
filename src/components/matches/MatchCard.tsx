@@ -78,7 +78,7 @@ export function MatchCard({ fixture, lng }: MatchCardProps) {
 
   return (
     <Link
-      href={matchHref(fixture.id, fixture.teams.home.name, fixture.teams.away.name)}
+      href={matchHref(fixture.id, fixture.teams.home.name, fixture.teams.away.name, lng)}
       className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50/80"
     >
       <div className="flex flex-1 items-center justify-end gap-2.5 text-right">

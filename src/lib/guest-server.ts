@@ -2,6 +2,8 @@
 // guest token in module scope (per server instance) and re-fetches on expiry or
 // on demand. Replaces the shared Basic admin credential used by server-api.ts.
 
+import axios from 'axios';
+
 import { ssrAuthHeaders } from './ssr-auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.football-magic.com';
@@ -32,15 +34,19 @@ async function fetchGuestToken(): Promise<string> {
     ...ssrAuthHeaders('POST', '/auth/guest', { client: 'web' }),
   };
   if (CLIENT_KEY) headers['X-Client-Key'] = CLIENT_KEY;
-  const res = await fetch(`${API_URL}/auth/guest`, {
-    method: 'POST',
+  // axios, not fetch: Next.js patches fetch inside ISR renders, and a token
+  // request must never be served from the data cache (a replayed stale token
+  // 401s) — yet `cache: 'no-store'` flips a static page dynamic at runtime,
+  // which crashes the render (app-static-to-dynamic-error) on every instance
+  // whose module-scope token cache is cold. axios sidesteps the patched fetch:
+  // always fresh on the wire, invisible to the route's static/dynamic tracking.
+  const res = await axios.post<GuestTokenResponse>(`${API_URL}/auth/guest`, { client: 'web' }, {
     headers,
-    body: JSON.stringify({ client: 'web' }),
-    cache: 'no-store',
-    signal: AbortSignal.timeout(15_000),
+    timeout: 15_000,
+    validateStatus: () => true,
   });
-  if (!res.ok) throw new Error(`guest token request failed: ${res.status}`);
-  const data = (await res.json()) as GuestTokenResponse;
+  if (res.status < 200 || res.status >= 300) throw new Error(`guest token request failed: ${res.status}`);
+  const data = res.data;
   cachedToken = data.token;
   cachedExp = Date.now() + data.expiresInMs;
   return data.token;

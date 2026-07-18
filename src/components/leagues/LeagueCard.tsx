@@ -16,7 +16,7 @@ export function LeagueCard({ league }: LeagueCardProps) {
 
   return (
     <Link
-      href={leagueHref(league.id, league.name, league.logo)}
+      href={leagueHref(league.id, league.name, league.logo, lng)}
       onClick={() => rememberLeagueName(league.id, league.name, lng)}
       className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50/80"
     >

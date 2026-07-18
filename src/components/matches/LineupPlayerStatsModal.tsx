@@ -105,7 +105,7 @@ export function LineupPlayerStatsModal({ player, lng, onClose }: LineupPlayerSta
           </div>
           <div className="min-w-0 flex-1">
             <Link
-              href={playerHref(player.player.id, player.player.name)}
+              href={playerHref(player.player.id, player.player.name, lng)}
               className="flex items-center gap-1.5 text-[15px] font-bold text-gray-900 hover:text-orange-500"
             >
               <span className="truncate">{player.player.name}</span>

@@ -94,7 +94,7 @@ export function MatchPageClient({ matchId, initialData, initialLng = 'en', intro
           single H1 (the match itself) for the document outline. */}
       <h1 className="sr-only">{scoreline}</h1>
       <PageHeader>
-        <Link href={leagueHref(fixture.league.id, fixture.league.name)} onClick={() => rememberLeagueName(fixture.league.id, fixture.league.name, lng)} className="flex items-center gap-2 border-b border-gray-100 px-4 py-2.5 transition-colors hover:bg-gray-50">
+        <Link href={leagueHref(fixture.league.id, fixture.league.name, undefined, lng)} onClick={() => rememberLeagueName(fixture.league.id, fixture.league.name, lng)} className="flex items-center gap-2 border-b border-gray-100 px-4 py-2.5 transition-colors hover:bg-gray-50">
           {fixture.league.logo && (
             <div className="relative h-5 w-5">
               <Image src={fixture.league.logo} alt={fixture.league.name} fill className="object-contain" unoptimized />
@@ -104,7 +104,7 @@ export function MatchPageClient({ matchId, initialData, initialLng = 'en', intro
         </Link>
 
         <div className="flex items-center justify-center gap-4 px-4 py-6">
-          <Link href={teamHref(fixture.teams.home.id, fixture.teams.home.name)} className="flex flex-1 flex-col items-center gap-2">
+          <Link href={teamHref(fixture.teams.home.id, fixture.teams.home.name, lng)} className="flex flex-1 flex-col items-center gap-2">
             <div className="relative h-14 w-14">
               {fixture.teams.home.logo && (
                 <Image src={fixture.teams.home.logo} alt={fixture.teams.home.name} fill className="object-contain" unoptimized />
@@ -137,7 +137,7 @@ export function MatchPageClient({ matchId, initialData, initialLng = 'en', intro
             </span>
           </div>
 
-          <Link href={teamHref(fixture.teams.away.id, fixture.teams.away.name)} className="flex flex-1 flex-col items-center gap-2">
+          <Link href={teamHref(fixture.teams.away.id, fixture.teams.away.name, lng)} className="flex flex-1 flex-col items-center gap-2">
             <div className="relative h-14 w-14">
               {fixture.teams.away.logo && (
                 <Image src={fixture.teams.away.logo} alt={fixture.teams.away.name} fill className="object-contain" unoptimized />

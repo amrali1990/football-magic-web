@@ -1,6 +1,6 @@
 import { format, addDays, subDays, isToday, parse, isValid } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
-import { teamPath, playerPath, leaguePath, matchPath } from '@/lib/seo';
+import { teamPath, playerPath, leaguePath, matchPath, Locale } from '@/lib/seo';
 
 const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 
@@ -68,21 +68,28 @@ export function cn(...classes: (string | undefined | false)[]): string {
 // Canonical slugged entity URLs. The logo argument is kept for call-site
 // compatibility (it used to be passed as a query param for instant headers,
 // which server rendering made unnecessary).
-export function leagueHref(id: number, name?: string, _logo?: string): string {
+//
+// Pass the app language (`lng` from the language slice) so an Arabic session
+// links into the /ar URL tree — an Arabic display name on an unprefixed URL
+// can never match that page's English canonical slug and forces a redirect on
+// every navigation. Omitting lng keeps the English tree (SSR default).
+const asLocale = (lng?: string): Locale => (lng === 'ar' ? 'ar' : 'en');
+
+export function leagueHref(id: number, name?: string, _logo?: string, lng?: string): string {
   void _logo;
-  return leaguePath(id, name);
+  return leaguePath(id, name, asLocale(lng));
 }
 
-export function teamHref(id: number, name?: string): string {
-  return teamPath(id, name);
+export function teamHref(id: number, name?: string, lng?: string): string {
+  return teamPath(id, name, asLocale(lng));
 }
 
-export function playerHref(id: number, name?: string): string {
-  return playerPath(id, name);
+export function playerHref(id: number, name?: string, lng?: string): string {
+  return playerPath(id, name, asLocale(lng));
 }
 
-export function matchHref(id: number, homeName?: string, awayName?: string): string {
-  return matchPath(id, homeName, awayName);
+export function matchHref(id: number, homeName?: string, awayName?: string, lng?: string): string {
+  return matchPath(id, homeName, awayName, asLocale(lng));
 }
 
 /**

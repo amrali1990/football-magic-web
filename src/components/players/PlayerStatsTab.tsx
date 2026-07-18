@@ -130,7 +130,7 @@ export function PlayerStatsTab({ playerId, total, teams, years, lng }: PlayerSta
         localTeams.map((team) => (
           <div key={team.id} className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
             <Link
-              href={teamHref(team.id, team.name)}
+              href={teamHref(team.id, team.name, lng)}
               className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
             >
               <div className="relative h-7 w-7 shrink-0">

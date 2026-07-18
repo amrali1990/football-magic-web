@@ -18,7 +18,7 @@ export function LeagueMatchGroup({ leagueWithFixtures, lng }: LeagueMatchGroupPr
   return (
     <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
       <Link
-        href={leagueHref(id, name, logo)}
+        href={leagueHref(id, name, logo, lng)}
         onClick={() => rememberLeagueName(id, name, lng)}
         className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 rounded-t-xl"
       >

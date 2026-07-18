@@ -41,7 +41,7 @@ export function RightSidebar() {
               {leagues.map((league) => (
                 <Link
                   key={league.id}
-                  href={leagueHref(league.id, league.name, league.logo)}
+                  href={leagueHref(league.id, league.name, league.logo, lng)}
                   onClick={() => rememberLeagueName(league.id, league.name, lng)}
                   className="group flex items-center gap-3.5 rounded-xl px-3 py-3 transition-all hover:bg-white hover:shadow-sm"
                 >
@@ -79,7 +79,7 @@ export function RightSidebar() {
               {teams.map((team) => (
                 <Link
                   key={team.id}
-                  href={teamHref(team.id, team.name)}
+                  href={teamHref(team.id, team.name, lng)}
                   className="group flex items-center gap-3.5 rounded-xl px-3 py-2.5 transition-all hover:bg-white hover:shadow-sm"
                 >
                   <div className="relative h-8 w-8 shrink-0 rounded-lg bg-white p-1 shadow-sm ring-1 ring-gray-100">

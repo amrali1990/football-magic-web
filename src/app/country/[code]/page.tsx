@@ -94,7 +94,7 @@ function CountryTeamsTab({ countryCode, national, lng }: { countryCode: string; 
       <SearchBar value={search} onChange={setSearch} placeholder={t('Search_Teams')} />
       <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 bg-white">
         {filtered.map((team) => (
-          <Link key={team.id} href={teamHref(team.id, team.name)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+          <Link key={team.id} href={teamHref(team.id, team.name, lng)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
             <div className="relative h-8 w-8 shrink-0">
               <Image src={team.logo} alt={team.name} fill className="object-contain" unoptimized />
             </div>
@@ -139,7 +139,7 @@ function CountryPlayersTab({ countryCode, lng }: { countryCode: string; lng: str
     <div className="space-y-3">
       <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 bg-white">
         {players.map((player) => (
-          <Link key={player.id} href={playerHref(player.id, player.name)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+          <Link key={player.id} href={playerHref(player.id, player.name, lng)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
             <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gray-100">
               <Image src={player.photo} alt={player.name} fill className="object-cover" unoptimized />
             </div>

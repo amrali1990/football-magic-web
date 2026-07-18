@@ -1,8 +1,10 @@
 // Server-side data layer for SEO/SSR pages. Uses native fetch (so Next.js can
 // cache/revalidate requests) instead of the axios client in src/lib/api.ts,
 // which stays in use for client-side interactions. Every getter is wrapped in
-// React cache() so generateMetadata and the page component share one request,
-// and returns null instead of throwing so pages can notFound() gracefully.
+// React cache() so generateMetadata and the page component share one request.
+// Entity getters return null only for a definitive API 404 (pages notFound()
+// on it) and throw UpstreamApiError on transient failures; list getters
+// degrade to empty results instead.
 
 import { cache } from 'react';
 import type { Standing } from '@/types';
@@ -55,6 +57,26 @@ async function doFetch<T>(path: string, options: ServerFetchOptions, token: stri
   });
 }
 
+/**
+ * A temporarily-failed upstream call (network error, 5xx, rate limit, auth
+ * outage). Distinct from "the API says this entity does not exist": pages let
+ * this error fail the render, so ISR never caches a 404 (or an empty page) it
+ * would then serve — stale-while-revalidate keeps the last good version until
+ * the API recovers. Swallowing these used to bake transient failures into the
+ * prerender cache as permanent 404s.
+ */
+export class UpstreamApiError extends Error {
+  constructor(path: string, cause: unknown) {
+    super(`upstream API call failed: ${path} (${cause instanceof Error ? cause.message : String(cause)})`);
+    this.name = 'UpstreamApiError';
+  }
+}
+
+/**
+ * Returns the parsed body, or null when the API definitively reports the
+ * resource missing (404). Anything else — network failure, 5xx, 429, an
+ * unrecoverable 401 — throws UpstreamApiError.
+ */
 async function serverFetch<T>(path: string, options: ServerFetchOptions = {}): Promise<T | null> {
   try {
     let token = await getServerGuestToken();
@@ -65,8 +87,28 @@ async function serverFetch<T>(path: string, options: ServerFetchOptions = {}): P
       token = await getServerGuestToken();
       res = await doFetch<T>(path, options, token);
     }
-    if (!res.ok) return null;
-    return (await res.json()) as T;
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    // Core's entity getters signal "does not exist" as 200 with an empty body
+    // (their advice reserves error statuses for real failures) — treat it as a
+    // definitive miss, not a parse failure.
+    const text = await res.text();
+    if (!text) return null;
+    return JSON.parse(text) as T;
+  } catch (err) {
+    throw new UpstreamApiError(path, err);
+  }
+}
+
+/**
+ * serverFetch for list/enrichment data where a page can reasonably render
+ * without it (standings, events, sidebars, sitemap inputs): transient upstream
+ * failures degrade to null instead of failing the whole render. Entity getters
+ * whose null means notFound() must use serverFetch directly.
+ */
+async function serverFetchTolerant<T>(path: string, options: ServerFetchOptions = {}): Promise<T | null> {
+  try {
+    return await serverFetch<T>(path, options);
   } catch {
     return null;
   }
@@ -85,12 +127,12 @@ export interface TeamLeagueEntry {
 }
 
 export const getTeamLeagues = cache(async (teamId: number, lng = 'en'): Promise<TeamLeagueEntry[]> => {
-  const raw = await serverFetch<TeamLeagueEntry[]>('/leagues/getLeaguesByTeam', { body: { teamId }, lng });
+  const raw = await serverFetchTolerant<TeamLeagueEntry[]>('/leagues/getLeaguesByTeam', { body: { teamId }, lng });
   return Array.isArray(raw) ? raw : [];
 });
 
 export const getTeamSeasonFixtures = cache(async (teamId: number, lng = 'en'): Promise<Fixture[]> => {
-  const raw = await serverFetch<{ fixtures?: Fixture[] }>('/leagues/getLeaguesSeasonFixturesByTeam', { body: { teamId }, lng });
+  const raw = await serverFetchTolerant<{ fixtures?: Fixture[] }>('/leagues/getLeaguesSeasonFixturesByTeam', { body: { teamId }, lng });
   return Array.isArray(raw?.fixtures) ? raw.fixtures : [];
 });
 
@@ -104,7 +146,7 @@ export interface SquadPlayer {
 }
 
 export const getTeamSquad = cache(async (teamId: number, lng = 'en'): Promise<SquadPlayer[]> => {
-  const raw = await serverFetch<SquadPlayer[]>('/teams/getTeamSquad', { body: { teamId }, lng });
+  const raw = await serverFetchTolerant<SquadPlayer[]>('/teams/getTeamSquad', { body: { teamId }, lng });
   return Array.isArray(raw) ? raw : [];
 });
 
@@ -114,7 +156,7 @@ export const getLeague = cache(async (leagueId: number, lng = 'en'): Promise<Lea
 });
 
 export const getLeagueStandings = cache(async (leagueId: number, season: number, lng = 'en'): Promise<Standing[][]> => {
-  const raw = await serverFetch<{ standings?: Standing[][] }>('/leagues/getLeagueStandingsBySeason', {
+  const raw = await serverFetchTolerant<{ standings?: Standing[][] }>('/leagues/getLeagueStandingsBySeason', {
     body: { leagueId, season },
     lng,
   });
@@ -146,7 +188,7 @@ export interface RawMatchEvent {
 }
 
 export const getFixtureEvents = cache(async (fixtureId: number, lng = 'en'): Promise<RawMatchEvent[]> => {
-  const raw = await serverFetch<RawMatchEvent[]>('/fixtures/getFixtureEvents', { body: { fixtureId }, lng, revalidate: 60 });
+  const raw = await serverFetchTolerant<RawMatchEvent[]>('/fixtures/getFixtureEvents', { body: { fixtureId }, lng, revalidate: 60 });
   return Array.isArray(raw) ? raw : [];
 });
 
@@ -168,12 +210,12 @@ export interface RawFixtureLineup {
 }
 
 export const getFixtureLineup = cache(async (fixtureId: number, lng = 'en'): Promise<RawFixtureLineup | null> => {
-  return serverFetch<RawFixtureLineup>('/fixtures/getFixtureLineup', { body: { fixtureId }, lng, revalidate: 60 });
+  return serverFetchTolerant<RawFixtureLineup>('/fixtures/getFixtureLineup', { body: { fixtureId }, lng, revalidate: 60 });
 });
 
 export const getMatchesByDate = cache(
   async (date: string, page = 0, lng = 'en'): Promise<{ list: LeagueWithFixtures[]; totalPages: number }> => {
-    const raw = await serverFetch<{ list?: LeagueWithFixtures[]; totalPages?: number }>('/leagues/getLeaguesByDate', {
+    const raw = await serverFetchTolerant<{ list?: LeagueWithFixtures[]; totalPages?: number }>('/leagues/getLeaguesByDate', {
       body: { date },
       headers: { page: String(page) },
       lng,
@@ -193,7 +235,7 @@ export interface LeagueGroup {
 }
 
 export const getAllLeagues = cache(async (lng = 'en'): Promise<LeagueGroup[]> => {
-  const raw = await serverFetch<LeagueGroup[]>('/leagues/getLeagues', { body: {}, lng, revalidate: 86400 });
+  const raw = await serverFetchTolerant<LeagueGroup[]>('/leagues/getLeagues', { body: {}, lng, revalidate: 86400 });
   return Array.isArray(raw) ? raw : [];
 });
 
@@ -206,7 +248,7 @@ export interface TopTeam {
 }
 
 export const getTopTeams = cache(async (lng = 'en'): Promise<TopTeam[]> => {
-  const raw = await serverFetch<TopTeam[]>('/teams/getTopTeams', { method: 'GET', lng, revalidate: 86400 });
+  const raw = await serverFetchTolerant<TopTeam[]>('/teams/getTopTeams', { method: 'GET', lng, revalidate: 86400 });
   return Array.isArray(raw) ? raw : [];
 });
 
@@ -216,7 +258,7 @@ export interface TopLeaguesSidebarResponse {
 }
 
 export const getTopLeagues = cache(async (lng = 'en'): Promise<TopLeaguesSidebarResponse['leagues']> => {
-  const raw = await serverFetch<TopLeaguesSidebarResponse>('/leagues/getTopLeagues', { method: 'GET', lng, revalidate: 86400 });
+  const raw = await serverFetchTolerant<TopLeaguesSidebarResponse>('/leagues/getTopLeagues', { method: 'GET', lng, revalidate: 86400 });
   return Array.isArray(raw?.leagues) ? raw.leagues : [];
 });
 

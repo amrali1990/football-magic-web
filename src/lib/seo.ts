@@ -6,6 +6,8 @@
 // Arabic mirrors live under /ar (/ar/team/...). hreflang alternates connect
 // the two; x-default points at English.
 
+import { normalizeSlug } from './slug';
+
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.football-magic.com').replace(/\/+$/, '');
 export const SITE_NAME = 'Football Magic';
 
@@ -24,17 +26,24 @@ export function localePrefix(locale: Locale = DEFAULT_LOCALE): string {
  * Arabic letters are kept so Arabic pages carry Arabic keywords in the URL.
  * Returns '' when nothing usable remains, in which case the id-only URL is
  * treated as canonical.
+ *
+ * The intermediate NFD pass exists only to strip Latin diacritics; the final
+ * normalizeSlug recomposes to NFC so Arabic hamza letters (أ إ ؤ ئ) leave here
+ * precomposed — the byte form browsers and search engines use. Without it,
+ * emitted URLs (%D8%A7%D9%94) and externally-typed URLs (%D8%A3) differ.
  */
 export function slugify(name?: string | null): string {
   if (!name) return '';
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9؀-ۿ]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80)
-    .replace(/-+$/, '');
+  return normalizeSlug(
+    name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9؀-ۿ]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80)
+      .replace(/-+$/, '')
+  );
 }
 
 function entityPath(base: string, id: number | string, slug: string, locale: Locale): string {
@@ -64,7 +73,10 @@ export function requestedEntityPath(base: string, id: string, slug: string[] | u
 
 /**
  * Compare a decoded requested path against an entityPath()-produced canonical
- * (whose slug is percent-encoded) — both sides are normalized to decoded form.
+ * (whose slug is percent-encoded) — both sides are compared in decoded form.
+ * Deliberately a strict byte comparison: a request in a different Unicode
+ * normal form (e.g. NFD from an old link) must NOT match, so the page 308s it
+ * to the NFC canonical — the backup for requests the proxy's 301 didn't see.
  */
 export function pathsMatch(requestedDecoded: string, canonicalEncoded: string): boolean {
   return requestedDecoded === safeDecode(canonicalEncoded);
