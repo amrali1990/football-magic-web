@@ -1,8 +1,19 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/lib/seo';
 
-// User-specific pages carry no indexable content.
-const PRIVATE_PATHS = ['/profile', '/register', '/favorites', '/settings', '/notifications'];
+// User-specific pages carry no indexable content, /api/ is data-only (audit
+// endpoints etc., never a page), and the faceted params aren't in use today
+// but would otherwise spawn crawlable URL variants of existing pages.
+const DISALLOW_PATHS = [
+  '/profile',
+  '/register',
+  '/favorites',
+  '/settings',
+  '/notifications',
+  '/api/',
+  '/*?*sort=',
+  '/*?*filter=',
+];
 
 // AI answer-engine and search crawlers we explicitly welcome (GEO).
 const AI_CRAWLERS = [
@@ -27,12 +38,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: PRIVATE_PATHS,
+        disallow: DISALLOW_PATHS,
       },
       ...AI_CRAWLERS.map((userAgent) => ({
         userAgent,
         allow: '/',
-        disallow: PRIVATE_PATHS,
+        disallow: DISALLOW_PATHS,
       })),
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
