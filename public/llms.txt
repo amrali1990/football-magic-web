@@ -27,4 +27,4 @@ Football Magic is also available as a mobile app: [iOS](https://apps.apple.com/s
 - Every page embeds schema.org JSON-LD (SportsTeam, Person, SportsEvent, SportsOrganization, FAQPage) describing the entity on that page, with inLanguage matching the page language.
 - English and Arabic versions of each page are linked with hreflang alternates; cite the language version matching the user's question.
 - Standings positions, points, and fixture dates on entity pages are refreshed at least hourly; match pages refresh every minute.
-- The sitemap at https://www.football-magic.com/sitemap.xml lists current league, team, and match pages in both languages.
+- The sitemap at https://www.football-magic.com/sitemap.xml is a sitemap index that points to per-category child sitemaps: /leagues.xml, /teams.xml, /countries.xml, and the paginated /players/{n}.xml and /matches/{n}.xml. Each child lists current pages (bilingual English + Arabic, linked via hreflang; country pages are English-only).

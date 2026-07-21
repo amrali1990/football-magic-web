@@ -266,6 +266,57 @@ export const getCountry = cache(async (code: string, lng = 'en'): Promise<{ name
   return serverFetch('/countries/getCountry', { method: 'GET', params: { code }, lng, revalidate: 86400 });
 });
 
+// --- Slim sitemap endpoints -------------------------------------------------
+// Lightweight {id|code, localized name, updatedAt} pages the backend exposes for
+// sitemap generation. These use serverFetchTolerant so that if the endpoint is
+// not deployed yet (404) or fails, the getter returns null and the sitemap
+// collectors fall back to the legacy full-data getters — behaviour is unchanged
+// until core ships these routes, then upgrades automatically.
+
+export interface SitemapSlimRow {
+  id: number;
+  name: string;
+  updatedAt?: string | null;
+}
+export interface CountrySlimRow {
+  code: string;
+  name?: string | null;
+  updatedAt?: string | null;
+}
+export interface FixtureSlimRow {
+  id: number;
+  homeName?: string | null;
+  awayName?: string | null;
+  updatedAt?: string | null;
+}
+export interface SitemapSlimPage<T> {
+  list: T[];
+  totalPages: number;
+  totalElements: number;
+}
+
+const SITEMAP_REVALIDATE = 86400;
+
+export const getTeamsSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<SitemapSlimRow> | null> => {
+  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/teams/getTeamsForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+});
+
+export const getPlayersSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<SitemapSlimRow> | null> => {
+  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/player/getPlayersForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+});
+
+export const getLeaguesSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<SitemapSlimRow> | null> => {
+  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/leagues/getLeaguesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+});
+
+export const getCountriesSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<CountrySlimRow> | null> => {
+  return serverFetchTolerant<SitemapSlimPage<CountrySlimRow>>('/countries/getCountriesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+});
+
+export const getFixturesSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<FixtureSlimRow> | null> => {
+  return serverFetchTolerant<SitemapSlimPage<FixtureSlimRow>>('/fixtures/getFixturesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: 3600 });
+});
+
 /**
  * The team's primary domestic competition (type "League" with a current
  * season), falling back to any competition with a current season.
