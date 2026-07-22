@@ -38,6 +38,11 @@ export function Tabs({ tabs, defaultTab, paramKey = 'tab' }: TabsProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramKey]);
 
+  // The available tabs can change at runtime (e.g. selecting a league season
+  // without standings hides the Table tab). If the active tab is no longer
+  // present, fall back to the first tab so the content area never goes blank.
+  const effectiveTab = tabs.some((tab) => tab.key === activeTab) ? activeTab : tabs[0]?.key;
+
   const selectTab = (key: string) => {
     setActiveTab(key);
     // replace (not push) so switching tabs doesn't spam browser history,
@@ -57,7 +62,7 @@ export function Tabs({ tabs, defaultTab, paramKey = 'tab' }: TabsProps) {
               onClick={() => selectTab(tab.key)}
               className={cn(
                 'whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors',
-                activeTab === tab.key
+                effectiveTab === tab.key
                   ? 'border-b-2 border-orange-500 text-orange-500'
                   : 'text-gray-500 hover:text-gray-700'
               )}
@@ -67,8 +72,8 @@ export function Tabs({ tabs, defaultTab, paramKey = 'tab' }: TabsProps) {
           ))}
         </div>
       </div>
-      <div key={activeTab} className="pt-4">
-        {tabs.find((tab) => tab.key === activeTab)?.content}
+      <div key={effectiveTab} className="pt-4">
+        {tabs.find((tab) => tab.key === effectiveTab)?.content}
       </div>
     </div>
   );

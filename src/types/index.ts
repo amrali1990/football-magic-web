@@ -21,6 +21,8 @@ export interface League {
   seasons?: Season[];
   currentSeason?: Season;
   coverage?: LeagueCoverage;
+  /** Whether the league has a winners/trophies history (drives the Winners tab). */
+  winners?: boolean;
 }
 
 export interface LeagueCoverage {
@@ -44,6 +46,13 @@ export interface Season {
   start: string;
   end: string;
   current: boolean;
+  /** Per-season data availability; gates the Table and Players Statistics tabs. */
+  coverage?: SeasonCoverage;
+}
+
+export interface SeasonCoverage {
+  standings: boolean;
+  statisticsPlayers: boolean;
 }
 
 export interface Country {

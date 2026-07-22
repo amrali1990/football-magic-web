@@ -89,6 +89,49 @@ export function LeaguePageClient({ leagueId, initialData, initialLng = 'en', int
 
   const displayName = passedName ?? league.name;
 
+  // Mirror the mobile LeagueScreen: the Table and Players Statistics tabs are
+  // shown only when the currently selected season covers them, and the Winners
+  // tab only when the league has a winners history. Matches and Info are always
+  // available.
+  const selectedSeasonObj = league.seasons?.find((s) => s.year === selectedSeason);
+  const showStandings = !!selectedSeasonObj?.coverage?.standings;
+  const showPlayersStats = !!selectedSeasonObj?.coverage?.statisticsPlayers;
+  const showWinners = !!league.winners;
+
+  const tabs = [
+    {
+      key: 'matches',
+      label: t('LeagueMatches'),
+      content: selectedSeason ? <LeagueMatchesTab leagueId={leagueId} season={selectedSeason} lng={lng} /> : null,
+    },
+    ...(showStandings
+      ? [{
+          key: 'standings',
+          label: t('Table'),
+          content: selectedSeason ? <StandingsTable leagueId={leagueId} season={selectedSeason} lng={lng} /> : null,
+        }]
+      : []),
+    ...(showPlayersStats
+      ? [{
+          key: 'players',
+          label: t('PlayersStatistics'),
+          content: selectedSeason ? <LeaguePlayersStatsTab leagueId={leagueId} season={selectedSeason} lng={lng} /> : null,
+        }]
+      : []),
+    ...(showWinners
+      ? [{
+          key: 'winners',
+          label: t('LeagueWinners'),
+          content: <LeagueWinnersTab leagueId={leagueId} lng={lng} />,
+        }]
+      : []),
+    {
+      key: 'info',
+      label: t('LeagueInfo'),
+      content: <LeagueInfoTab league={league} lng={lng} />,
+    },
+  ];
+
   return (
     <div className="flex flex-col">
       {/* Sidebar shows top leagues/teams from this league's country. */}
@@ -142,35 +185,7 @@ export function LeaguePageClient({ leagueId, initialData, initialLng = 'en', int
         {loading ? (
           <LoadingSpinner />
         ) : (
-          <Tabs
-            tabs={[
-              {
-                key: 'matches',
-                label: t('LeagueMatches'),
-                content: selectedSeason ? <LeagueMatchesTab leagueId={leagueId} season={selectedSeason} lng={lng} /> : null,
-              },
-              {
-                key: 'standings',
-                label: t('Table'),
-                content: selectedSeason ? <StandingsTable leagueId={leagueId} season={selectedSeason} lng={lng} /> : null,
-              },
-              {
-                key: 'players',
-                label: t('PlayersStatistics'),
-                content: selectedSeason ? <LeaguePlayersStatsTab leagueId={leagueId} season={selectedSeason} lng={lng} /> : null,
-              },
-              {
-                key: 'winners',
-                label: t('LeagueWinners'),
-                content: <LeagueWinnersTab leagueId={leagueId} lng={lng} />,
-              },
-              {
-                key: 'info',
-                label: t('LeagueInfo'),
-                content: <LeagueInfoTab league={league} lng={lng} />,
-              },
-            ]}
-          />
+          <Tabs tabs={tabs} />
         )}
       </div>
     </div>

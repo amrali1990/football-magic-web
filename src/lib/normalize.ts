@@ -74,7 +74,15 @@ export function normalizeTeamInfo(raw: RawTeamInfo): TeamData {
 export interface RawLeagueResponse {
   league?: { id: number; name: string; type: string; logo: string };
   country?: { id?: number; code: string; flag: string; name: string };
-  seasons?: Array<{ seasonId: number; year: string; label: string; start: string; end: string; current: boolean }>;
+  seasons?: Array<{
+    seasonId: number;
+    year: string;
+    label: string;
+    start: string;
+    end: string;
+    current: boolean;
+    coverage?: { standings?: boolean; statisticsPlayers?: boolean };
+  }>;
   expandable?: boolean;
   winners?: boolean;
 }
@@ -96,7 +104,12 @@ export function normalizeLeague(response: RawLeagueResponse, leagueId: number): 
       start: s.start,
       end: s.end,
       current: s.current,
+      coverage: {
+        standings: !!s.coverage?.standings,
+        statisticsPlayers: !!s.coverage?.statisticsPlayers,
+      },
     })),
+    winners: !!response.winners,
   };
 }
 
