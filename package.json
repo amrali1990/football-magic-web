@@ -12,6 +12,9 @@
   "engines": {
     "node": "22.x"
   },
+  "overrides": {
+    "@swc/helpers": "0.5.23"
+  },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
     "axios": "^1.17.0",
