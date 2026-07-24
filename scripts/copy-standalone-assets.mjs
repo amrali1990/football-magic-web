@@ -14,10 +14,18 @@ import { cpSync, existsSync } from 'node:fs';
 const copies = [
   ['.next/static', '.next/standalone/.next/static'],
   ['public', '.next/standalone/public'],
+  // Next's file tracer drops @swc/helpers' ESM directory from the standalone
+  // bundle (only cjs/ is traced), but next@16.2.7's runtime require-hook loads
+  // @swc/helpers/esm/*, so the server crashes on boot with MODULE_NOT_FOUND.
+  // Copy the full package to guarantee every helper file is present.
+  ['node_modules/@swc/helpers', '.next/standalone/node_modules/@swc/helpers'],
 ];
 
 for (const [from, to] of copies) {
-  if (!existsSync(from)) continue;
+  if (!existsSync(from)) {
+    console.warn(`[copy-standalone-assets] SKIP (missing source): ${from}`);
+    continue;
+  }
   cpSync(from, to, { recursive: true });
   console.log(`[copy-standalone-assets] ${from} -> ${to}`);
 }

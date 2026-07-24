@@ -13,7 +13,7 @@
     "node": "22.x"
   },
   "overrides": {
-    "@swc/helpers": "0.5.23"
+    "@swc/helpers": "0.5.15"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
