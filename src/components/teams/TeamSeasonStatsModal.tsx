@@ -27,18 +27,18 @@ interface TimelinePeriod {
 export interface TeamStatistics {
   league: { id: number; name: string; logo: string } | null;
   team?: { id: number; name: string; logo: string };
-  fixtures: { played: StatTriple; wins: StatTriple; draws: StatTriple; loses: StatTriple };
-  clean_sheet: StatTriple;
-  failed_to_score: StatTriple;
+  fixtures: { played: StatTriple; wins: StatTriple; draws: StatTriple; loses: StatTriple } | null;
+  clean_sheet: StatTriple | null;
+  failed_to_score: StatTriple | null;
   goals: {
-    for: { total: StatTriple; average: StatTriple; minutes: TimelinePeriod[] };
-    against: { total: StatTriple; average: StatTriple; minutes: TimelinePeriod[] };
-  };
-  cards: { yellow: TimelinePeriod[]; red: TimelinePeriod[] };
+    for: { total: StatTriple; average: StatTriple; minutes: TimelinePeriod[] } | null;
+    against: { total: StatTriple; average: StatTriple; minutes: TimelinePeriod[] } | null;
+  } | null;
+  cards: { yellow: TimelinePeriod[]; red: TimelinePeriod[] } | null;
   penalty: {
-    missed: { total: number | null; percentage: string | null };
-    scored: { total: number | null; percentage: string | null };
-  };
+    missed: { total: number | null; percentage: string | null } | null;
+    scored: { total: number | null; percentage: string | null } | null;
+  } | null;
 }
 
 interface Season {
@@ -78,8 +78,8 @@ function fmtDate(value: string, lng: string) {
   }).format(d);
 }
 
-function cardsSum(cards: TimelinePeriod[]) {
-  return (cards || []).reduce((sum, c) => sum + (c.total ?? 0), 0);
+function cardsSum(cards: TimelinePeriod[] | null | undefined) {
+  return (cards || []).reduce((sum, c) => sum + (c?.total ?? 0), 0);
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -104,19 +104,19 @@ function ColumnHeader() {
   );
 }
 
-function TripleRow({ label, value, lng }: { label: string; value: StatTriple; lng: string }) {
+function TripleRow({ label, value, lng }: { label: string; value: StatTriple | null | undefined; lng: string }) {
   const { t } = useTranslation(lng);
   return (
     <div className="flex items-center px-4 py-2 hover:bg-gray-50">
       <span className="flex-1 text-[13px] text-gray-700">{t(label)}</span>
-      <span className="w-10 text-center text-[13px] text-gray-600">{num(value.home, lng)}</span>
-      <span className="w-10 text-center text-[13px] text-gray-600">{num(value.away, lng)}</span>
-      <span className="w-10 text-center text-[13px] font-bold text-gray-900">{num(value.total, lng)}</span>
+      <span className="w-10 text-center text-[13px] text-gray-600">{num(value?.home, lng)}</span>
+      <span className="w-10 text-center text-[13px] text-gray-600">{num(value?.away, lng)}</span>
+      <span className="w-10 text-center text-[13px] font-bold text-gray-900">{num(value?.total, lng)}</span>
     </div>
   );
 }
 
-function Timeline({ data, lng }: { data: TimelinePeriod[]; lng: string }) {
+function Timeline({ data, lng }: { data: TimelinePeriod[] | null | undefined; lng: string }) {
   if (!data || data.length === 0) return null;
   return (
     <div className="flex gap-2 overflow-x-auto px-4 py-2.5">
@@ -263,10 +263,10 @@ export function TeamSeasonStatsModal({ stats, season, teamId, leagueId, lng, onC
           <Section title={t('Matches')}>
             <ColumnHeader />
             <div className="divide-y divide-gray-50">
-              <TripleRow label="Played" value={stats.fixtures.played} lng={lng} />
-              <TripleRow label="Wins" value={stats.fixtures.wins} lng={lng} />
-              <TripleRow label="Draws" value={stats.fixtures.draws} lng={lng} />
-              <TripleRow label="Loses" value={stats.fixtures.loses} lng={lng} />
+              <TripleRow label="Played" value={stats.fixtures?.played} lng={lng} />
+              <TripleRow label="Wins" value={stats.fixtures?.wins} lng={lng} />
+              <TripleRow label="Draws" value={stats.fixtures?.draws} lng={lng} />
+              <TripleRow label="Loses" value={stats.fixtures?.loses} lng={lng} />
               <TripleRow label="clean_sheet" value={stats.clean_sheet} lng={lng} />
               <TripleRow label="failed_to_score" value={stats.failed_to_score} lng={lng} />
             </div>
@@ -275,29 +275,29 @@ export function TeamSeasonStatsModal({ stats, season, teamId, leagueId, lng, onC
           {/* Goals */}
           <Section title={t('Goals')}>
             <div className="divide-y divide-gray-50">
-              <TripleRow label="Scored" value={stats.goals.for.total} lng={lng} />
-              <TripleRow label="Scored Avg" value={stats.goals.for.average} lng={lng} />
+              <TripleRow label="Scored" value={stats.goals?.for?.total} lng={lng} />
+              <TripleRow label="Scored Avg" value={stats.goals?.for?.average} lng={lng} />
             </div>
-            <Timeline data={stats.goals.for.minutes} lng={lng} />
+            <Timeline data={stats.goals?.for?.minutes} lng={lng} />
             <div className="divide-y divide-gray-50 border-t border-gray-100">
-              <TripleRow label="Conceded" value={stats.goals.against.total} lng={lng} />
-              <TripleRow label="Conceded Avg" value={stats.goals.against.average} lng={lng} />
+              <TripleRow label="Conceded" value={stats.goals?.against?.total} lng={lng} />
+              <TripleRow label="Conceded Avg" value={stats.goals?.against?.average} lng={lng} />
             </div>
-            <Timeline data={stats.goals.against.minutes} lng={lng} />
+            <Timeline data={stats.goals?.against?.minutes} lng={lng} />
           </Section>
 
           {/* Cards */}
           <Section title={t('Cards')}>
             <div className="flex items-center gap-2.5 px-4 py-2.5">
               <span className="inline-block h-4 w-3 rounded-sm bg-yellow-400" />
-              <span className="text-[14px] font-bold text-gray-900">{num(cardsSum(stats.cards.yellow), lng)}</span>
+              <span className="text-[14px] font-bold text-gray-900">{num(cardsSum(stats.cards?.yellow), lng)}</span>
             </div>
-            <Timeline data={stats.cards.yellow} lng={lng} />
+            <Timeline data={stats.cards?.yellow} lng={lng} />
             <div className="flex items-center gap-2.5 border-t border-gray-100 px-4 py-2.5">
               <span className="inline-block h-4 w-3 rounded-sm bg-red-500" />
-              <span className="text-[14px] font-bold text-gray-900">{num(cardsSum(stats.cards.red), lng)}</span>
+              <span className="text-[14px] font-bold text-gray-900">{num(cardsSum(stats.cards?.red), lng)}</span>
             </div>
-            <Timeline data={stats.cards.red} lng={lng} />
+            <Timeline data={stats.cards?.red} lng={lng} />
           </Section>
 
           {/* Penalties */}
@@ -305,13 +305,13 @@ export function TeamSeasonStatsModal({ stats, season, teamId, leagueId, lng, onC
             <div className="flex divide-x divide-gray-100">
               <div className="flex w-1/2 flex-col items-center px-4 py-3">
                 <span className="text-[12px] font-medium text-gray-500">{t('Missed Penalties')}</span>
-                <span className="mt-1 text-[15px] font-bold text-gray-900">{num(stats.penalty.missed.total, lng)}</span>
-                <span className="text-[12px] text-orange-500">{num(stats.penalty.missed.percentage, lng)}</span>
+                <span className="mt-1 text-[15px] font-bold text-gray-900">{num(stats.penalty?.missed?.total, lng)}</span>
+                <span className="text-[12px] text-orange-500">{num(stats.penalty?.missed?.percentage, lng)}</span>
               </div>
               <div className="flex w-1/2 flex-col items-center px-4 py-3">
                 <span className="text-[12px] font-medium text-gray-500">{t('Scored Penalties')}</span>
-                <span className="mt-1 text-[15px] font-bold text-gray-900">{num(stats.penalty.scored.total, lng)}</span>
-                <span className="text-[12px] text-green-600">{num(stats.penalty.scored.percentage, lng)}</span>
+                <span className="mt-1 text-[15px] font-bold text-gray-900">{num(stats.penalty?.scored?.total, lng)}</span>
+                <span className="text-[12px] text-green-600">{num(stats.penalty?.scored?.percentage, lng)}</span>
               </div>
             </div>
           </Section>
