@@ -25,7 +25,7 @@ interface TimelinePeriod {
 }
 
 export interface TeamStatistics {
-  league: { id: number; name: string; logo: string };
+  league: { id: number; name: string; logo: string } | null;
   team?: { id: number; name: string; logo: string };
   fixtures: { played: StatTriple; wins: StatTriple; draws: StatTriple; loses: StatTriple };
   clean_sheet: StatTriple;
@@ -188,9 +188,9 @@ export function TeamSeasonStatsModal({ stats, season, teamId, leagueId, lng, onC
   const isTeamHeader = header === 'team';
   const headerEntity = isTeamHeader
     ? { name: stats.team?.name ?? '', logo: stats.team?.logo ?? '', href: `/team/${stats.team?.id ?? teamId}` }
-    : { name: stats.league.name, logo: stats.league.logo, href: `/league/${stats.league.id ?? leagueId}` };
+    : { name: stats.league?.name ?? '', logo: stats.league?.logo ?? '', href: `/league/${stats.league?.id ?? leagueId}` };
   const headerSubtitle = isTeamHeader
-    ? stats.league.name
+    ? stats.league?.name ?? ''
     : `${fmtDate(season.start, lng)} - ${fmtDate(season.end, lng)}`;
 
   return (
