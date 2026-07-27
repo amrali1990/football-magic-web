@@ -19,7 +19,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.football-magic.c
 const CLIENT_KEY = process.env.CLIENT_KEY || process.env.NEXT_PUBLIC_CLIENT_KEY || '';
 const WEB_EVENTS_PATH = '/audit/web-events';
 
-export type WebAuditEventType = 'slug_normalization_mismatch' | 'not_found' | 'server_error';
+export type WebAuditEventType = 'slug_normalization_mismatch' | 'not_found' | 'server_error' | 'revalidation';
 
 export interface WebAuditEvent {
   eventType: WebAuditEventType;

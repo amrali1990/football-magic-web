@@ -32,3 +32,39 @@ export function ssrAuthHeaders(method: string, url: string, body?: unknown): Rec
     'X-SSR-Call-Id': callId,
   };
 }
+
+export type SsrAuthReason = 'ok' | 'no-secret' | 'missing-headers' | 'stale' | 'bad-signature';
+
+export interface SsrAuthResult {
+  ok: boolean;
+  reason: SsrAuthReason;
+}
+
+/**
+ * Verifies an INBOUND request carries a valid SSR signature — the mirror of
+ * ssrAuthHeaders(), used by the revalidation endpoint to authenticate calls
+ * from trusted internal services (e.g. seo-geo-crawler). Same scheme as the
+ * gateway: X-SSR-Auth = base64(HMAC-SHA256(SSR_SHARED_SECRET, X-SSR-Ts)).
+ *
+ * FAILS CLOSED: with no secret configured it returns { ok: false,
+ * reason: 'no-secret' } — the caller MUST reject (never treat a missing secret
+ * as "auth disabled"). Freshness defaults to 60s (SSR_FRESHNESS_SECONDS),
+ * matching the gateway, so a captured header cannot be replayed.
+ */
+export function verifySsrAuth(headers: Headers): SsrAuthResult {
+  if (!SECRET) return { ok: false, reason: 'no-secret' };
+  const ts = headers.get('x-ssr-ts');
+  const sig = headers.get('x-ssr-auth');
+  if (!ts || !sig) return { ok: false, reason: 'missing-headers' };
+  const tsNum = Number(ts);
+  if (!Number.isFinite(tsNum)) return { ok: false, reason: 'missing-headers' };
+  const freshnessMs = (Number(process.env.SSR_FRESHNESS_SECONDS) || 60) * 1000;
+  if (Math.abs(Date.now() - tsNum) > freshnessMs) return { ok: false, reason: 'stale' };
+  const expected = crypto.createHmac('sha256', SECRET).update(ts, 'utf8').digest('base64');
+  const expectedBuf = Buffer.from(expected, 'utf8');
+  const sigBuf = Buffer.from(sig, 'utf8');
+  if (expectedBuf.length !== sigBuf.length || !crypto.timingSafeEqual(expectedBuf, sigBuf)) {
+    return { ok: false, reason: 'bad-signature' };
+  }
+  return { ok: true, reason: 'ok' };
+}

@@ -22,6 +22,18 @@ import type { League, Fixture, LeagueWithFixtures, FixtureByDate } from '@/types
 
 import { getServerGuestToken, invalidateServerGuestToken, SSR_DEVICE_ID } from './guest-server';
 import { ssrAuthHeaders } from './ssr-auth';
+import {
+  teamTag,
+  leagueTag,
+  playerTag,
+  matchTag,
+  countryTag,
+  matchesByDateTag,
+  TAG_TOP_TEAMS,
+  TAG_TOP_LEAGUES,
+  TAG_LEAGUES_INDEX,
+  TAG_SITEMAP,
+} from './revalidation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.football-magic.com';
 const CLIENT_KEY = process.env.CLIENT_KEY || process.env.NEXT_PUBLIC_CLIENT_KEY || '';
@@ -33,10 +45,13 @@ interface ServerFetchOptions {
   headers?: Record<string, string>;
   lng?: string;
   revalidate?: number;
+  /** ISR cache tags (see src/lib/revalidation.ts) — locale-agnostic so one tag
+   *  spans the en page, the ar page and the entity's OG route. */
+  tags?: string[];
 }
 
 async function doFetch<T>(path: string, options: ServerFetchOptions, token: string): Promise<Response> {
-  const { method = 'POST', body, params, headers, lng = 'en', revalidate = 3600 } = options;
+  const { method = 'POST', body, params, headers, lng = 'en', revalidate = 3600, tags } = options;
   const qs = params ? `?${new URLSearchParams(params)}` : '';
   const reqHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -52,7 +67,7 @@ async function doFetch<T>(path: string, options: ServerFetchOptions, token: stri
     method,
     headers: reqHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
-    next: { revalidate },
+    next: tags && tags.length > 0 ? { revalidate, tags } : { revalidate },
     signal: AbortSignal.timeout(15000),
   });
 }
@@ -115,7 +130,7 @@ async function serverFetchTolerant<T>(path: string, options: ServerFetchOptions 
 }
 
 export const getTeamInfo = cache(async (teamId: number, lng = 'en'): Promise<TeamData | null> => {
-  const raw = await serverFetch<RawTeamInfo>('/teams/getTeamInformations', { body: { teamId }, lng });
+  const raw = await serverFetch<RawTeamInfo>('/teams/getTeamInformations', { body: { teamId }, lng, tags: [teamTag(teamId)] });
   return raw?.team ? normalizeTeamInfo(raw) : null;
 });
 
@@ -127,12 +142,12 @@ export interface TeamLeagueEntry {
 }
 
 export const getTeamLeagues = cache(async (teamId: number, lng = 'en'): Promise<TeamLeagueEntry[]> => {
-  const raw = await serverFetchTolerant<TeamLeagueEntry[]>('/leagues/getLeaguesByTeam', { body: { teamId }, lng });
+  const raw = await serverFetchTolerant<TeamLeagueEntry[]>('/leagues/getLeaguesByTeam', { body: { teamId }, lng, tags: [teamTag(teamId)] });
   return Array.isArray(raw) ? raw : [];
 });
 
 export const getTeamSeasonFixtures = cache(async (teamId: number, lng = 'en'): Promise<Fixture[]> => {
-  const raw = await serverFetchTolerant<{ fixtures?: Fixture[] }>('/leagues/getLeaguesSeasonFixturesByTeam', { body: { teamId }, lng });
+  const raw = await serverFetchTolerant<{ fixtures?: Fixture[] }>('/leagues/getLeaguesSeasonFixturesByTeam', { body: { teamId }, lng, tags: [teamTag(teamId)] });
   return Array.isArray(raw?.fixtures) ? raw.fixtures : [];
 });
 
@@ -146,12 +161,12 @@ export interface SquadPlayer {
 }
 
 export const getTeamSquad = cache(async (teamId: number, lng = 'en'): Promise<SquadPlayer[]> => {
-  const raw = await serverFetchTolerant<SquadPlayer[]>('/teams/getTeamSquad', { body: { teamId }, lng });
+  const raw = await serverFetchTolerant<SquadPlayer[]>('/teams/getTeamSquad', { body: { teamId }, lng, tags: [teamTag(teamId)] });
   return Array.isArray(raw) ? raw : [];
 });
 
 export const getLeague = cache(async (leagueId: number, lng = 'en'): Promise<League | null> => {
-  const raw = await serverFetch<RawLeagueResponse>('/leagues/getLeague', { body: { leagueId }, lng });
+  const raw = await serverFetch<RawLeagueResponse>('/leagues/getLeague', { body: { leagueId }, lng, tags: [leagueTag(leagueId)] });
   return raw?.league ? normalizeLeague(raw, leagueId) : null;
 });
 
@@ -159,18 +174,21 @@ export const getLeagueStandings = cache(async (leagueId: number, season: number,
   const raw = await serverFetchTolerant<{ standings?: Standing[][] }>('/leagues/getLeagueStandingsBySeason', {
     body: { leagueId, season },
     lng,
+    // Standings feed both the league page and every member team's page, so
+    // tagging by league lets a standings update cascade to all of them.
+    tags: [leagueTag(leagueId)],
   });
   return Array.isArray(raw?.standings) ? raw.standings : [];
 });
 
 export const getPlayer = cache(async (playerId: number, lng = 'en'): Promise<PlayerData | null> => {
-  const raw = await serverFetch<PlayerData>('/player/getPlayerInformations', { body: { playerId }, lng });
+  const raw = await serverFetch<PlayerData>('/player/getPlayerInformations', { body: { playerId }, lng, tags: [playerTag(playerId)] });
   return raw?.player ? raw : null;
 });
 
 export const getFixture = cache(async (fixtureId: number, lng = 'en'): Promise<MatchData | null> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = await serverFetch<any>('/fixtures/getFixture', { body: { fixtureId }, lng, revalidate: 60 });
+  const raw = await serverFetch<any>('/fixtures/getFixture', { body: { fixtureId }, lng, revalidate: 60, tags: [matchTag(fixtureId)] });
   return normalizeFixtureResponse(raw);
 });
 
@@ -188,7 +206,7 @@ export interface RawMatchEvent {
 }
 
 export const getFixtureEvents = cache(async (fixtureId: number, lng = 'en'): Promise<RawMatchEvent[]> => {
-  const raw = await serverFetchTolerant<RawMatchEvent[]>('/fixtures/getFixtureEvents', { body: { fixtureId }, lng, revalidate: 60 });
+  const raw = await serverFetchTolerant<RawMatchEvent[]>('/fixtures/getFixtureEvents', { body: { fixtureId }, lng, revalidate: 60, tags: [matchTag(fixtureId)] });
   return Array.isArray(raw) ? raw : [];
 });
 
@@ -210,7 +228,7 @@ export interface RawFixtureLineup {
 }
 
 export const getFixtureLineup = cache(async (fixtureId: number, lng = 'en'): Promise<RawFixtureLineup | null> => {
-  return serverFetchTolerant<RawFixtureLineup>('/fixtures/getFixtureLineup', { body: { fixtureId }, lng, revalidate: 60 });
+  return serverFetchTolerant<RawFixtureLineup>('/fixtures/getFixtureLineup', { body: { fixtureId }, lng, revalidate: 60, tags: [matchTag(fixtureId)] });
 });
 
 export const getMatchesByDate = cache(
@@ -220,6 +238,7 @@ export const getMatchesByDate = cache(
       headers: { page: String(page) },
       lng,
       revalidate: 60,
+      tags: [matchesByDateTag(date)],
     });
     return { list: Array.isArray(raw?.list) ? raw.list : [], totalPages: raw?.totalPages ?? 0 };
   }
@@ -235,7 +254,7 @@ export interface LeagueGroup {
 }
 
 export const getAllLeagues = cache(async (lng = 'en'): Promise<LeagueGroup[]> => {
-  const raw = await serverFetchTolerant<LeagueGroup[]>('/leagues/getLeagues', { body: {}, lng, revalidate: 86400 });
+  const raw = await serverFetchTolerant<LeagueGroup[]>('/leagues/getLeagues', { body: {}, lng, revalidate: 86400, tags: [TAG_LEAGUES_INDEX] });
   return Array.isArray(raw) ? raw : [];
 });
 
@@ -248,7 +267,7 @@ export interface TopTeam {
 }
 
 export const getTopTeams = cache(async (lng = 'en'): Promise<TopTeam[]> => {
-  const raw = await serverFetchTolerant<TopTeam[]>('/teams/getTopTeams', { method: 'GET', lng, revalidate: 86400 });
+  const raw = await serverFetchTolerant<TopTeam[]>('/teams/getTopTeams', { method: 'GET', lng, revalidate: 86400, tags: [TAG_TOP_TEAMS] });
   return Array.isArray(raw) ? raw : [];
 });
 
@@ -258,12 +277,12 @@ export interface TopLeaguesSidebarResponse {
 }
 
 export const getTopLeagues = cache(async (lng = 'en'): Promise<TopLeaguesSidebarResponse['leagues']> => {
-  const raw = await serverFetchTolerant<TopLeaguesSidebarResponse>('/leagues/getTopLeagues', { method: 'GET', lng, revalidate: 86400 });
+  const raw = await serverFetchTolerant<TopLeaguesSidebarResponse>('/leagues/getTopLeagues', { method: 'GET', lng, revalidate: 86400, tags: [TAG_TOP_LEAGUES] });
   return Array.isArray(raw?.leagues) ? raw.leagues : [];
 });
 
 export const getCountry = cache(async (code: string, lng = 'en'): Promise<{ name?: string; code?: string; flag?: string } | null> => {
-  return serverFetch('/countries/getCountry', { method: 'GET', params: { code }, lng, revalidate: 86400 });
+  return serverFetch('/countries/getCountry', { method: 'GET', params: { code }, lng, revalidate: 86400, tags: [countryTag(code)] });
 });
 
 // --- Slim sitemap endpoints -------------------------------------------------
@@ -298,23 +317,23 @@ export interface SitemapSlimPage<T> {
 const SITEMAP_REVALIDATE = 86400;
 
 export const getTeamsSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<SitemapSlimRow> | null> => {
-  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/teams/getTeamsForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/teams/getTeamsForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE, tags: [TAG_SITEMAP] });
 });
 
 export const getPlayersSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<SitemapSlimRow> | null> => {
-  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/player/getPlayersForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/player/getPlayersForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE, tags: [TAG_SITEMAP] });
 });
 
 export const getLeaguesSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<SitemapSlimRow> | null> => {
-  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/leagues/getLeaguesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+  return serverFetchTolerant<SitemapSlimPage<SitemapSlimRow>>('/leagues/getLeaguesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE, tags: [TAG_SITEMAP] });
 });
 
 export const getCountriesSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<CountrySlimRow> | null> => {
-  return serverFetchTolerant<SitemapSlimPage<CountrySlimRow>>('/countries/getCountriesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE });
+  return serverFetchTolerant<SitemapSlimPage<CountrySlimRow>>('/countries/getCountriesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: SITEMAP_REVALIDATE, tags: [TAG_SITEMAP] });
 });
 
 export const getFixturesSitemapPage = cache(async (page: number, size: number, lng = 'en'): Promise<SitemapSlimPage<FixtureSlimRow> | null> => {
-  return serverFetchTolerant<SitemapSlimPage<FixtureSlimRow>>('/fixtures/getFixturesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: 3600 });
+  return serverFetchTolerant<SitemapSlimPage<FixtureSlimRow>>('/fixtures/getFixturesForSitemap', { method: 'GET', params: { page: String(page), size: String(size) }, lng, revalidate: 3600, tags: [TAG_SITEMAP] });
 });
 
 /**
